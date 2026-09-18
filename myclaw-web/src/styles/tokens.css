@@ -1,0 +1,134 @@
+/**
+ * 设计令牌：颜色、圆角、阴影、布局、字体。
+ *
+ * 视觉基调：扁平、以 1px 边框和留白做分隔，不使用渐变与投影。
+ * 强调色统一为石墨灰，依靠层级、留白和字重建立重点。
+ *
+ * 组件样式一律引用这里的变量，不要在组件里写死颜色。
+ */
+
+:root {
+  color-scheme: light;
+
+  /* 中性色阶 */
+  --bg-app: #f8f8f7;
+  --bg-sidebar: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f3f3f1;
+  --bg-hover: #f3f3f1;
+  --bg-active: #f3f3f1;
+  --bg-inset: #f3f3f1;
+
+  --border: #e5e5e1;
+  --border-strong: #cecec8;
+
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #8b8b94;
+  --text-faint: #adadb5;
+  --text-on-accent: #ffffff;
+
+  /* 强调色：石墨灰 */
+  --brand-50: #f3f3f2;
+  --brand-100: #e7e7e4;
+  --brand-200: #d2d2ce;
+  --brand-300: #aaa9a3;
+  --brand-400: #7c7b75;
+  --brand-500: #575650;
+  --brand-600: #45443f;
+  --brand-700: #363531;
+  --brand-800: #292825;
+
+  --accent: var(--brand-500);
+  --accent-hover: var(--brand-600);
+  --accent-soft: var(--brand-50);
+  --accent-border: #d9d9d5;
+  /* 白底上的强调文字用更深一档，保证可读性 */
+  --accent-text: #45443f;
+
+  /* 语义色 */
+  --success-soft: #e9f6ef;
+  --success-text: #1f7a4d;
+  --danger-soft: #fdecea;
+  --danger-text: #b03a32;
+  --warning-soft: #fbf3e6;
+  --warning-text: #8a6522;
+
+  /* 代码 */
+  --code-bg: #f4f4f6;
+  --code-text: #52525b;
+  --code-inline-bg: #f4f4f6;
+  --code-inline-text: #52525b;
+
+  /* 圆角 */
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 99px;
+
+  /* 扁平基调：默认没有投影，只有弹窗需要浮起来 */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 12px 40px rgba(24, 24, 27, 0.16);
+
+  /* 布局 */
+  --sidebar-width: 305px;
+  --header-height: 65px;
+  --content-width: 950px;
+
+  /* 层级 */
+  --z-scrim: 20;
+  --z-sidebar: 30;
+  --z-modal: 40;
+
+  /* 字体 */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+
+  --transition-fast: 0.13s ease;
+  --transition-base: 0.15s ease;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-app: #131316;
+  --bg-sidebar: #18181b;
+  --bg-surface: #18181b;
+  --bg-subtle: #232327;
+  --bg-hover: #232327;
+  --bg-active: #232327;
+  --bg-inset: #232327;
+
+  --border: #2a2a2f;
+  --border-strong: #3a3a41;
+
+  --text-primary: #ededf0;
+  --text-secondary: #b4b4bc;
+  --text-muted: #85858e;
+  --text-faint: #6a6a73;
+
+  --accent: var(--brand-400);
+  --accent-hover: var(--brand-300);
+  --accent-soft: #292927;
+  --accent-border: #444440;
+  --accent-text: #d0cfc9;
+
+  --success-soft: #16291f;
+  --success-text: #6cc79a;
+  --danger-soft: #33201e;
+  --danger-text: #e8908a;
+  --warning-soft: #2e2617;
+  --warning-text: #d8b06d;
+
+  --code-bg: #1f1f24;
+  --code-text: #c9c9d1;
+  --code-inline-bg: #232327;
+  --code-inline-text: #c9c9d1;
+
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+}

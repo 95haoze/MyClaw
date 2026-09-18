@@ -1,0 +1,112 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+  mvc:
+    async:
+      request-timeout: 10m
+  application:
+    name: myclaw-server
+  datasource:
+    url: "${MYCLAW_DB_URL:jdbc:mysql://localhost:3306/myclaw?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8}"
+    username: "${MYCLAW_DB_USERNAME:root}"
+    password: "${MYCLAW_DB_PASSWORD:123456}"
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+
+
+server:
+  port: 19090
+
+myclaw:
+  server:
+    session:
+      timeout: 30m
+      cleanup-interval: 10m
+    streaming:
+      core-pool-size: 4
+      max-pool-size: 16
+      queue-capacity: 100
+  # api-key 留空时会自动从环境变量推断：
+  #   MYCLAW_API_KEY -> OPENAI_API_KEY -> DASHSCOPE_API_KEY -> aliQwen-api
+  # 如果用的是通义千问，base-url 与 model 也会自动指向 DashScope 兼容端点。
+  # 也可以直接写死（不推荐提交到代码仓库）：
+  api-key: "${MYCLAW_API_KEY:sk-4e4a1fe68fa34892bfa0405ded3246c8}"
+  base-url: https://api.deepseek.com
+  model: deepseek-v4-pro
+  temperature: 0.3
+  max-iterations: 8
+  max-retries: 2
+
+  # 工具的工作目录：文件类工具只能访问该目录及其子目录
+  working-directory: .
+
+  tools:
+    calculator: true
+    current-time: true
+    file-read: true
+    file-list: true
+    search-text: true
+    replace-text: true
+    http-fetch: true
+    # Database tools reuse Spring DataSource. Query/schema are enabled by default; writes require explicit opt-in.
+    database: true
+    database-allow-write: false
+    database-max-rows: 200
+    database-timeout-seconds: 15
+    # 写文件与执行命令默认关闭，按需开启
+    file-write: true
+    shell: true
+    code-execute: true
+    # LSP commands are controlled by backend configuration; the model cannot provide executable commands.
+    # lsp-servers:
+    #   java: ["jdtls"]
+    #   typescript: ["typescript-language-server", "--stdio"]
+    #   vue: ["vue-language-server", "--stdio"]
+    # Authentication stays on the server; prefer environment-variable placeholders for secrets.
+    # http-credentials:
+    #   github:
+    #     base-url: "https://api.github.com/"
+    #     headers:
+    #       Authorization: "Bearer ${GITHUB_TOKEN}"
+    #       Accept: "application/vnd.github+json"
+    #   brave:
+    #     base-url: "https://api.search.brave.com/"
+    #     headers:
+    #       X-Subscription-Token: "${BRAVE_SEARCH_API_KEY}"
+    # search-providers:
+    #   brave:
+    #     url-template: "https://api.search.brave.com/res/v1/web/search?q={query}&page={page}"
+    #     credential-profile: brave
+    #     response-format: brave # brave / tavily / serper / text / auto
+
+  # 按需加载的技能：递归扫描这些目录下的 <技能名>/SKILL.md。
+  # 路径相对于进程的工作目录（下面这条按“在仓库根目录启动”配置）。
+  # 模型先 list_skills 看摘要，需要时再 load_skill 展开正文，不加载就不占上下文。
+  skills:
+    enabled: true
+    directories:
+      - skills
+
+  memory:
+    max-messages: 40
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  file:
+    name: "${MYCLAW_LOG_FILE:./logs/myclaw-server.log}"
+  pattern:
+    level: "%5p [requestId:%X{requestId:-}]"
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 30
+      total-size-cap: 1GB

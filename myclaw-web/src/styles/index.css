@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/**
+ * 样式入口。只做聚合，具体规则按分层放在各自的文件里：
+ *   tokens  → 设计令牌与明暗主题
+ *   base    → 全局重置与基础元素
+ *   markdown→ v-html 注入的回答排版（必须全局）
+ * 组件自身的样式放在对应 .vue 文件的 <style scoped> 中。
+ */
+
+@import './tokens.css';
+@import './base.css';
+@import './markdown.css';

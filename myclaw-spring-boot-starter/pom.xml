@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.myclaw</groupId>
+        <artifactId>myclaw-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>myclaw-spring-boot-starter</artifactId>
+    <name>myclaw-spring-boot-starter</name>
+    <description>MyClaw 的 Spring Boot 自动配置：零配置拿到 Agent，并支持 @MyClawTool 注解声明工具</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.myclaw</groupId>
+            <artifactId>myclaw-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.myclaw</groupId>
+            <artifactId>myclaw-openai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.myclaw</groupId>
+            <artifactId>myclaw-tools</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

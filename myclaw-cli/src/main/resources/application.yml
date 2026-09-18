@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: myclaw-cli
+
+myclaw:
+  # api-key 留空时会自动从环境变量推断：
+  #   MYCLAW_API_KEY -> OPENAI_API_KEY -> DASHSCOPE_API_KEY -> aliQwen-api
+  # 如果用的是通义千问，base-url 与 model 也会自动指向 DashScope 兼容端点。
+  # 也可以直接写死（不推荐提交到代码仓库）：
+  # api-key:
+  base-url: https://api.deepseek.com
+  model: deepseek-v4-pro
+
+  temperature: 0.3
+  max-iterations: 8
+  max-retries: 2
+
+  # 工具的工作目录：文件类工具只能访问该目录及其子目录
+  working-directory: .
+
+  tools:
+    calculator: true
+    current-time: true
+    file-read: true
+    file-list: true
+    http-fetch: true
+    # 写文件与执行命令默认关闭，按需开启
+    file-write: true
+    shell: true
+
+  # 按需加载的技能：递归扫描这些目录下的 <技能名>/SKILL.md。
+  # 路径相对于进程的工作目录（下面这条按“在仓库根目录启动”配置）。
+  # 模型先 list_skills 看摘要，需要时再 load_skill 展开正文，不加载就不占上下文。
+  skills:
+    enabled: true
+    directories:
+      - skills
+
+  memory:
+    max-messages: 40
+
+logging:
+  level:
+    root: warn
+    io.myclaw: info
