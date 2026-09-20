@@ -174,7 +174,8 @@ public final class Agent {
                     throw new MaxIterationsException(maxIterations);
                 }
 
-                ChatRequest chatRequest = buildChatRequest(request);
+                boolean forceFinalAnswer = iteration == maxIterations && !steps.isEmpty();
+                ChatRequest chatRequest = buildChatRequest(request, forceFinalAnswer);
                 if (request.listener() != null) request.listener().onModelRequest(iteration);
                 fireHooks(hook -> hook.onModelRequest(this, chatRequest));
 
@@ -186,6 +187,9 @@ public final class Agent {
                 memory.add(assistant);
 
                 List<ToolCall> toolCalls = assistant.toolCalls();
+                if (forceFinalAnswer && !toolCalls.isEmpty()) {
+                    throw new MaxIterationsException(maxIterations);
+                }
                 if (toolCalls.isEmpty()) {
                     String answer = assistant.content() == null ? "" : assistant.content();
                     steps.add(new AgentStep.Answer(iteration, answer, response.usage()));
@@ -238,7 +242,7 @@ public final class Agent {
                 : model.stream(chatRequest, listener);
     }
 
-    private ChatRequest buildChatRequest(AgentRequest request) {
+    private ChatRequest buildChatRequest(AgentRequest request, boolean forceFinalAnswer) {
         List<Message> messages = new ArrayList<>();
         String effectiveSystemPrompt =
                 request.systemPrompt() != null ? request.systemPrompt() : this.systemPrompt;
@@ -246,8 +250,11 @@ public final class Agent {
             messages.add(Message.system(effectiveSystemPrompt));
         }
         messages.addAll(memory.messages());
+        if (forceFinalAnswer) {
+            messages.add(Message.system("工具调用轮数即将达到上限。不要再调用任何工具，请根据已有信息直接给出最终结果，并明确说明尚未完成的部分。"));
+        }
 
-        List<ToolDefinition> definitions = tools.isEmpty() || !model.supportsToolCalling()
+        List<ToolDefinition> definitions = forceFinalAnswer || tools.isEmpty() || !model.supportsToolCalling()
                 ? List.of()
                 : tools.definitions();
 

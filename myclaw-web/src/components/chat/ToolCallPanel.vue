@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ChevronRight, Wrench } from 'lucide-vue-next'
+import { computed } from 'vue'
 import type { ToolExecution } from '../../api'
 import { formatDuration } from '../../utils/format'
 
-defineProps<{ tools: ToolExecution[] }>()
+const props = defineProps<{ tools: ToolExecution[] }>()
 
 const STATUS_LABEL: Record<ToolExecution['status'], string> = {
   running: '执行中',
@@ -11,46 +12,111 @@ const STATUS_LABEL: Record<ToolExecution['status'], string> = {
   failed: '失败',
   unknown: '未知',
 }
+
+const failedCount = computed(() => props.tools.filter(tool => tool.status === 'failed').length)
 </script>
 
 <template>
-  <div class="tool-calls">
-    <details
-      v-for="tool in tools"
-      :key="tool.id"
-      class="tool-call"
-      :class="tool.status"
-      :open="tool.status === 'failed'"
-    >
-      <summary :aria-label="`${tool.name}，状态：${STATUS_LABEL[tool.status]}，耗时：${formatDuration(tool.durationMillis)}`">
-        <ChevronRight :size="13" class="chevron" />
-        <Wrench :size="13" class="icon" />
-        <strong>{{ tool.name }}</strong>
-        <span class="status">{{ STATUS_LABEL[tool.status] }}</span>
-        <small>{{ formatDuration(tool.durationMillis) }}</small>
-      </summary>
+  <details class="tool-calls">
+    <summary class="tool-calls-summary" aria-label="查看工具调用详情">
+      <Wrench :size="13" class="icon" />
+      <span>工具调用</span>
+      <span class="count">{{ tools.length }}</span>
+      <span v-if="failedCount" class="failed-badge">{{ failedCount }} 次失败</span>
+      <ChevronRight :size="13" class="chevron" />
+    </summary>
 
-      <div class="detail">
-        <label>参数</label>
-        <pre>{{ tool.arguments }}</pre>
-        <label>结果</label>
-        <pre>{{ tool.result }}</pre>
-      </div>
-    </details>
-  </div>
+    <div class="tool-list">
+      <details
+        v-for="tool in tools"
+        :key="tool.id"
+        class="tool-call"
+        :class="tool.status"
+        :open="tool.status === 'failed'"
+      >
+        <summary :aria-label="`${tool.name}，状态：${STATUS_LABEL[tool.status]}，耗时：${formatDuration(tool.durationMillis)}`">
+          <ChevronRight :size="13" class="chevron" />
+          <Wrench :size="13" class="icon" />
+          <strong>{{ tool.name }}</strong>
+          <span class="status">{{ STATUS_LABEL[tool.status] }}</span>
+          <small>{{ formatDuration(tool.durationMillis) }}</small>
+        </summary>
+
+        <div class="detail">
+          <label>参数</label>
+          <pre>{{ tool.arguments }}</pre>
+          <label>结果</label>
+          <pre>{{ tool.result }}</pre>
+        </div>
+      </details>
+    </div>
+  </details>
 </template>
 
 <style scoped>
 .tool-calls {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.tool-calls-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.tool-calls-summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-calls-summary .icon {
+  color: var(--text-muted);
+}
+
+.count {
+  min-width: 18px;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.failed-badge {
+  color: var(--danger-text);
+  font-size: 11px;
+}
+
+.tool-calls-summary .chevron {
+  margin-left: auto;
+  color: var(--text-faint);
+  transition: transform var(--transition-fast);
+}
+
+.tool-calls[open] > .tool-calls-summary .chevron {
+  transform: rotate(90deg);
+}
+
+.tool-list {
   display: grid;
   gap: 8px;
-  margin-top: 16px;
+  padding: 0 12px 12px;
 }
 
 .tool-call {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  background: var(--bg-subtle);
   overflow: hidden;
 }
 
@@ -58,7 +124,7 @@ const STATUS_LABEL: Record<ToolExecution['status'], string> = {
   border-color: var(--danger-text);
 }
 
-summary {
+.tool-call > summary {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -68,11 +134,11 @@ summary {
   font-size: 12.5px;
 }
 
-summary::-webkit-details-marker {
+.tool-call > summary::-webkit-details-marker {
   display: none;
 }
 
-.chevron {
+.tool-call .chevron {
   color: var(--text-faint);
   transition: transform var(--transition-fast);
 }
@@ -81,11 +147,11 @@ summary::-webkit-details-marker {
   transform: rotate(90deg);
 }
 
-.icon {
+.tool-call .icon {
   color: var(--text-muted);
 }
 
-summary strong {
+.tool-call > summary strong {
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 580;
@@ -96,7 +162,7 @@ summary strong {
   padding: 2px 7px;
   border-radius: var(--radius-pill);
   font-size: 10.5px;
-  background: var(--bg-subtle);
+  background: var(--bg-surface);
   color: var(--text-muted);
 }
 
@@ -110,7 +176,7 @@ summary strong {
   color: var(--danger-text);
 }
 
-summary small {
+.tool-call > summary small {
   margin-left: auto;
   font-size: 11px;
   color: var(--text-faint);
@@ -143,6 +209,9 @@ summary small {
 }
 
 @media (max-width: 820px) {
-  summary { min-height: 44px; padding: 10px; }
+  .tool-calls-summary,
+  .tool-call > summary { min-height: 44px; padding: 10px; }
+  .tool-list { padding: 0 10px 10px; }
   .detail { padding: 0 10px 10px; }
-}</style>
+}
+</style>

@@ -41,70 +41,149 @@ public final class BuiltinTools {
         return List.of(calculator(), currentTime(), readFile(), listFiles(), searchText(), httpFetch());
     }
 
-    /** 计算器工具（calculate）。 */
+    /**
+     * 计算器工具（calculate）。
+     */
     public static CalculatorTool calculator() {
         return new CalculatorTool();
     }
 
-    /** 当前时间工具（current_time）。 */
+    /**
+     * 当前时间工具（current_time）。
+     */
     public static CurrentTimeTool currentTime() {
         return new CurrentTimeTool();
     }
 
-    /** 读文件工具（read_file）。 */
+    /**
+     * 读文件工具（read_file）。
+     */
     public static FileReadTool readFile() {
         return new FileReadTool();
     }
 
-    /** 写文件工具（write_file）。 */
+    /**
+     * 写文件工具（write_file）。
+     */
     public static FileWriteTool writeFile() {
         return new FileWriteTool();
     }
 
-    /** 列目录工具（list_files）。 */
+    /**
+     * 列目录工具（list_files）。
+     */
     public static FileListTool listFiles() {
         return new FileListTool();
     }
 
-    /** HTTP 抓取工具（http_fetch）。 */
+    /**
+     * HTTP 抓取工具（http_fetch）。
+     */
     public static HttpFetchTool httpFetch() {
         return new HttpFetchTool();
     }
 
-    /** 搜索文本工具（search_text）。*/
+    /**
+     * 搜索文本工具（search_text）。
+     */
     public static SearchTextTool searchText() {
         return new SearchTextTool();
     }
 
-    /** 文本替换具（replace_text）。*/
+    /**
+     * 文本替换具（replace_text）。
+     */
     public static ReplaceTextTool replaceText() {
         return new ReplaceTextTool();
     }
 
-    public static FileManageTool manageFile() { return new FileManageTool(); }
+    public static FileManageTool manageFile() {
+        return new FileManageTool();
+    }
 
-    public static BatchReplaceTextTool batchReplaceText() { return new BatchReplaceTextTool(); }
+    public static BatchReplaceTextTool batchReplaceText() {
+        return new BatchReplaceTextTool();
+    }
 
-    public static Tool gitStatus() { return GitTools.status(); }
-    public static Tool gitDiff() { return GitTools.diff(); }
-    public static Tool gitLog() { return GitTools.log(); }
-    public static Tool gitAdd() { return GitTools.add(); }
-    public static Tool gitReset() { return GitTools.reset(); }
-    public static Tool gitCommit() { return GitTools.commit(); }
-    public static Tool gitBranch() { return GitTools.branch(); }
-    public static Tool gitCheckout() { return GitTools.checkout(); }
-    public static Tool findSymbol() { return JavaCodeTools.findSymbol(); }
-    public static Tool findReferences() { return JavaCodeTools.findReferences(); }
-    public static Tool codeOutline() { return JavaCodeTools.outline(); }
-    public static Tool codeDiagnostics() { return JavaCodeTools.diagnostics(); }
-    public static Tool lspQuery(java.util.Map<String, java.util.List<String>> commands) { return new LspQueryTool(commands); }
-    public static Tool webSearch(java.util.Map<String, NetworkTools.SearchProvider> providers, java.util.Map<String, NetworkTools.CredentialProfile> credentials) { return NetworkTools.webSearch(providers, credentials); }
-    public static Tool apiRequest(java.util.Map<String, NetworkTools.CredentialProfile> credentials) { return NetworkTools.apiRequest(credentials); }
-    public static Tool downloadFile(java.util.Map<String, NetworkTools.CredentialProfile> credentials) { return NetworkTools.downloadFile(credentials); }
-    public static Tool batchFetch(java.util.Map<String, NetworkTools.CredentialProfile> credentials) { return NetworkTools.batchFetch(credentials); }
-    public static Tool databaseSchema(java.util.Map<String, DatabaseTools.Profile> profiles) { return DatabaseTools.schema(profiles); }
-    public static Tool databaseQuery(java.util.Map<String, DatabaseTools.Profile> profiles) { return DatabaseTools.query(profiles); }
-    public static Tool databaseExecute(java.util.Map<String, DatabaseTools.Profile> profiles) { return DatabaseTools.execute(profiles); }
+    public static Tool gitStatus() {
+        return GitTools.status();
+    }
+
+    public static Tool gitDiff() {
+        return GitTools.diff();
+    }
+
+    public static Tool gitLog() {
+        return GitTools.log();
+    }
+
+    public static Tool gitAdd() {
+        return GitTools.add();
+    }
+
+    public static Tool gitReset() {
+        return GitTools.reset();
+    }
+
+    public static Tool gitCommit() {
+        return GitTools.commit();
+    }
+
+    public static Tool gitBranch() {
+        return GitTools.branch();
+    }
+
+    public static Tool gitCheckout() {
+        return GitTools.checkout();
+    }
+
+    public static Tool findSymbol() {
+        return JavaCodeTools.findSymbol();
+    }
+
+    public static Tool findReferences() {
+        return JavaCodeTools.findReferences();
+    }
+
+    public static Tool codeOutline() {
+        return JavaCodeTools.outline();
+    }
+
+    public static Tool codeDiagnostics() {
+        return JavaCodeTools.diagnostics();
+    }
+
+    public static Tool lspQuery(java.util.Map<String, java.util.List<String>> commands) {
+        return new LspQueryTool(commands);
+    }
+
+    public static Tool webSearch(java.util.Map<String, NetworkTools.SearchProvider> providers, java.util.Map<String, NetworkTools.CredentialProfile> credentials) {
+        return NetworkTools.webSearch(providers, credentials);
+    }
+
+    public static Tool apiRequest(java.util.Map<String, NetworkTools.CredentialProfile> credentials) {
+        return NetworkTools.apiRequest(credentials);
+    }
+
+    public static Tool downloadFile(java.util.Map<String, NetworkTools.CredentialProfile> credentials) {
+        return NetworkTools.downloadFile(credentials);
+    }
+
+    public static Tool batchFetch(java.util.Map<String, NetworkTools.CredentialProfile> credentials) {
+        return NetworkTools.batchFetch(credentials);
+    }
+
+    public static Tool databaseSchema(java.util.Map<String, DatabaseTools.Profile> profiles) {
+        return DatabaseTools.schema(profiles);
+    }
+
+    public static Tool databaseQuery(java.util.Map<String, DatabaseTools.Profile> profiles) {
+        return DatabaseTools.query(profiles);
+    }
+
+    public static Tool databaseExecute(java.util.Map<String, DatabaseTools.Profile> profiles) {
+        return DatabaseTools.execute(profiles);
+    }
 
 
     public static CodeExecuteTool executeCode(boolean enabled) {
@@ -142,11 +221,18 @@ public final class BuiltinTools {
             registry.register(replaceText());
             registry.register(manageFile());
             registry.register(batchReplaceText());
-            registry.register(gitStatus()); registry.register(gitDiff()); registry.register(gitLog());
-            registry.register(gitAdd()); registry.register(gitReset()); registry.register(gitCommit());
-            registry.register(gitBranch()); registry.register(gitCheckout());
-            registry.register(findSymbol()); registry.register(findReferences());
-            registry.register(codeOutline()); registry.register(codeDiagnostics());
+            registry.register(gitStatus());
+            registry.register(gitDiff());
+            registry.register(gitLog());
+            registry.register(gitAdd());
+            registry.register(gitReset());
+            registry.register(gitCommit());
+            registry.register(gitBranch());
+            registry.register(gitCheckout());
+            registry.register(findSymbol());
+            registry.register(findReferences());
+            registry.register(codeOutline());
+            registry.register(codeDiagnostics());
         }
         if (includeShell) {
             registry.register(new ShellTool(true, List.of(), ShellTool.DEFAULT_TIMEOUT));

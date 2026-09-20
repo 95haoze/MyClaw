@@ -1,6 +1,5 @@
 package io.myclaw.tools;
 
-import io.myclaw.core.exception.ToolExecutionException;
 import io.myclaw.core.tool.JsonSchema;
 import io.myclaw.core.tool.Tool;
 import io.myclaw.core.tool.ToolContext;
