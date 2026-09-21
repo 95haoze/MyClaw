@@ -135,6 +135,13 @@ public final class ToolRegistry {
     }
 
     private static String describe(Exception e) {
+        if (e instanceof java.net.http.HttpConnectTimeoutException) {
+            return "HTTP 连接超时，请检查目标网站、网络连接或代理配置";
+        }
+        if (e instanceof java.net.http.HttpTimeoutException
+                || e instanceof java.net.SocketTimeoutException) {
+            return "HTTP 请求超时，请稍后重试";
+        }
         String message = e.getMessage();
         if (message == null || message.isBlank()) {
             message = e.getClass().getSimpleName();

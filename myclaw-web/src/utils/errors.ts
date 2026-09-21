@@ -5,6 +5,8 @@ const CODE_MESSAGES: Record<string, string> = {
     AUTH_INVALID_CREDENTIALS: '用户名或密码错误',
     AGENT_MAX_ITERATIONS: 'Agent 多次调用工具后仍未完成。请缩小任务范围，或换一种方式描述后重试。',
     TOOL_EXECUTION_FAILED: '工具连续执行失败。请检查工具参数、权限和服务状态后重试。',
+    MODEL_EMPTY_RESPONSE: '模型未返回有效内容，请检查模型名称、服务地址和 API Key 后重试。',
+    MODEL_AUTH_FAILED: '模型服务鉴权失败，请检查 API Key 是否正确或已失效。',
     MODEL_TIMEOUT: '模型响应超时，请稍后重试或缩短问题。',
     MODEL_RATE_LIMIT: '模型服务当前请求过多，请稍后再试。',
     MODEL_ERROR: '模型服务暂时不可用，请稍后重试。',

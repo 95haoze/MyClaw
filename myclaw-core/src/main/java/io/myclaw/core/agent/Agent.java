@@ -1,6 +1,7 @@
 package io.myclaw.core.agent;
 
 import io.myclaw.core.exception.MaxIterationsException;
+import io.myclaw.core.exception.EmptyModelResponseException;
 import io.myclaw.core.exception.ToolExecutionException;
 import io.myclaw.core.memory.InMemoryMemory;
 import io.myclaw.core.memory.Memory;
@@ -184,14 +185,24 @@ public final class Agent {
 
                 totalUsage = totalUsage.plus(response.usage());
                 Message assistant = response.message();
-                memory.add(assistant);
-
                 List<ToolCall> toolCalls = assistant.toolCalls();
+                String answer = assistant.content() == null ? "" : assistant.content();
+                if (toolCalls.isEmpty() && answer.isBlank()) {
+                    if (!steps.isEmpty()
+                            && steps.getLast() instanceof AgentStep.ToolUse toolUse
+                            && !toolUse.results().isEmpty()
+                            && toolUse.results().stream().allMatch(ToolResult::error)) {
+                        String failedTools = toolUse.results().stream()
+                                .map(ToolResult::toolName).distinct().toList().toString();
+                        throw new ToolExecutionException("工具执行失败，模型未能在失败后生成说明: " + failedTools);
+                    }
+                    throw new EmptyModelResponseException();
+                }
+                memory.add(assistant);
                 if (forceFinalAnswer && !toolCalls.isEmpty()) {
                     throw new MaxIterationsException(maxIterations);
                 }
                 if (toolCalls.isEmpty()) {
-                    String answer = assistant.content() == null ? "" : assistant.content();
                     steps.add(new AgentStep.Answer(iteration, answer, response.usage()));
                     AgentResponse result = new AgentResponse(
                             answer, steps, totalUsage, iteration, elapsedMillis(startedAt));

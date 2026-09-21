@@ -35,9 +35,21 @@ public final class NetworkTools {
         }
     }
 
-    public record SearchProvider(String urlTemplate, String credentialProfile, String responseFormat) {
+    public record SearchProvider(String urlTemplate, String credentialProfile, String responseFormat, String method) {
+        public SearchProvider {
+            responseFormat = responseFormat == null || responseFormat.isBlank() ? "auto" : responseFormat;
+            method = method == null || method.isBlank() ? "GET" : method.toUpperCase(Locale.ROOT);
+            if (!List.of("GET", "POST").contains(method)) {
+                throw new IllegalArgumentException("Search provider method must be GET or POST");
+            }
+        }
+
+        public SearchProvider(String urlTemplate, String credentialProfile, String responseFormat) {
+            this(urlTemplate, credentialProfile, responseFormat, "GET");
+        }
+
         public SearchProvider(String urlTemplate, String credentialProfile) {
-            this(urlTemplate, credentialProfile, "auto");
+            this(urlTemplate, credentialProfile, "auto", "GET");
         }
     }
 
@@ -68,10 +80,21 @@ public final class NetworkTools {
                     if (page < 1 || page > 20) {
                         throw new IllegalArgumentException("page must be between 1 and 20");
                     }
-                    String query = URLEncoder.encode(ToolSupport.requiredString(args, "query"), StandardCharsets.UTF_8);
+                    String rawQuery = ToolSupport.requiredString(args, "query");
+                    String query = URLEncoder.encode(rawQuery, StandardCharsets.UTF_8);
                     String url = provider.urlTemplate().replace("{query}", query).replace("{page}", String.valueOf(page));
                     CredentialProfile profile = profile(credentials, provider.credentialProfile(), false);
-                    SecureHttp.Response response = HTTP.send(URI.create(url), "GET", null, headers(profile),
+                    String requestBody = null;
+                    if ("POST".equals(provider.method())) {
+                        requestBody = Json.write(Json.obj()
+                                .put("query", rawQuery)
+                                .put("search_depth", "basic")
+                                .put("max_results", 10)
+                                .put("topic", "general")
+                                .put("include_answer", false)
+                                .put("include_raw_content", false));
+                    }
+                    SecureHttp.Response response = HTTP.send(URI.create(url), provider.method(), requestBody, headers(profile),
                             2_000_000, profile != null && profile.allowPrivateNetwork());
                     if (response.status() >= 400) throw new IllegalStateException("Search provider returned HTTP " + response.status());
                     return formatSearchResults(response.body(), provider.responseFormat());
@@ -285,8 +308,10 @@ public final class NetworkTools {
 
     static final class SecureHttp {
         private static final int MAX_REDIRECTS = 5;
+        private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
+        private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
         private final boolean allowPrivateNetwork;
-        private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).followRedirects(HttpClient.Redirect.NEVER).build();
+        private final HttpClient client = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).followRedirects(HttpClient.Redirect.NEVER).build();
 
         record Response(int status, URI uri, java.net.http.HttpHeaders headers, byte[] body) {
         }
@@ -308,7 +333,7 @@ public final class NetworkTools {
             URI credentialOrigin = headers.isEmpty() ? null : initial;
             for (int redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
                 if (!allowPrivateNetwork && !requestAllowsPrivate) validatePublic(uri);
-                HttpRequest.Builder builder = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(30)).header("User-Agent", "MyClaw/1.0");
+                HttpRequest.Builder builder = HttpRequest.newBuilder(uri).timeout(REQUEST_TIMEOUT).header("User-Agent", "MyClaw/1.0");
                 headers.forEach((name, value) -> {
                     if (isAllowedHeader(name)) builder.header(name, value);
                 });

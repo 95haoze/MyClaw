@@ -169,16 +169,24 @@ public class ShellTool implements Tool {
 
     /** 高危片段检查 + 白名单前缀检查。 */
     private void checkSafety(String command) {
+        checkCommandSafety(command, allowlistPrefixes);
+    }
+
+    /** Shared by foreground and managed background command tools. */
+    static void checkCommandSafety(String command, List<String> allowlistPrefixes) {
         String lower = command.toLowerCase(Locale.ROOT);
         for (String fragment : DANGEROUS_FRAGMENTS) {
             if (lower.contains(fragment)) {
                 throw new SecurityException("拒绝执行包含高危片段的命令: `" + fragment + "`，原始命令: " + command);
             }
         }
-        if (allowlistPrefixes.isEmpty()) {
+        if (allowlistPrefixes == null || allowlistPrefixes.isEmpty()) {
             return;
         }
         boolean allowed = allowlistPrefixes.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(prefix -> !prefix.isEmpty())
                 .anyMatch(prefix -> lower.startsWith(prefix.toLowerCase(Locale.ROOT)));
         if (!allowed) {
             throw new SecurityException("命令不在白名单内，仅允许以 " + allowlistPrefixes + " 开头。实际命令: " + command);

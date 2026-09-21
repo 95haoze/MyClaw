@@ -15,6 +15,8 @@ import io.myclaw.openai.OpenAiChatModel;
 import io.myclaw.openai.OpenAiConfig;
 import io.myclaw.spring.factory.AgentFactory;
 import io.myclaw.tools.BuiltinTools;
+import io.myclaw.tools.BackgroundProcessTools;
+import io.myclaw.tools.BrowserAutomationTools;
 import io.myclaw.tools.NetworkTools;
 import io.myclaw.tools.DatabaseTools;
 import org.slf4j.Logger;
@@ -142,6 +144,21 @@ public class MyClawAutoConfiguration {
     ) {
         return new AgentFactory(chatModel, toolRegistry, properties);
     }
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "myclaw.tools", name = "background-processes", havingValue = "true")
+    public BackgroundProcessTools myClawBackgroundProcessTools(MyClawProperties properties) {
+        return BuiltinTools.backgroundProcesses(properties.getTools().getShellAllowlist());
+    }
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "myclaw.tools", name = "browser", havingValue = "true")
+    public BrowserAutomationTools myClawBrowserTools(MyClawProperties properties) {
+        var tools = properties.getTools();
+        return BuiltinTools.browser(tools.getBrowserAllowedHosts(), tools.isBrowserAllowPrivateNetwork(), tools.isBrowserHeadless());
+    }
+
     // ------------------------------------------------------------------ 内部
 
     private static void registerBuiltins(ToolRegistry registry, MyClawProperties.Tools tools, ApplicationContext applicationContext) {
@@ -189,6 +206,25 @@ public class MyClawAutoConfiguration {
             registry.register(BuiltinTools.gitCommit());
             registry.register(BuiltinTools.gitBranch());
             registry.register(BuiltinTools.gitCheckout());
+            registry.register(BuiltinTools.gitShow());
+            registry.register(BuiltinTools.gitBlame());
+            registry.register(BuiltinTools.gitStash());
+            registry.register(BuiltinTools.gitTag());
+        }
+        if (tools.isProjectTools()) {
+            registry.register(BuiltinTools.projectDetect());
+            registry.register(BuiltinTools.projectBuild());
+            registry.register(BuiltinTools.projectTests());
+            registry.register(BuiltinTools.projectTestCase());
+            registry.register(BuiltinTools.projectLint());
+        }
+        if (tools.isBackgroundProcesses()) {
+            applicationContext.getBeansOfType(BackgroundProcessTools.class).values()
+                    .forEach(processTools -> registry.registerAll(processTools.tools()));
+        }
+        if (tools.isBrowser()) {
+            applicationContext.getBeansOfType(BrowserAutomationTools.class).values()
+                    .forEach(browserTools -> registry.registerAll(browserTools.tools()));
         }
         if (tools.isDatabase()) {
             java.util.Map<String, DatabaseTools.Profile> databases = new java.util.LinkedHashMap<>();
@@ -236,7 +272,7 @@ public class MyClawAutoConfiguration {
     private static java.util.Map<String, NetworkTools.SearchProvider> searchProviders(MyClawProperties.Tools tools) {
         java.util.Map<String, NetworkTools.SearchProvider> result = new java.util.LinkedHashMap<>();
         tools.getSearchProviders().forEach((name, value) -> result.put(name,
-                new NetworkTools.SearchProvider(value.getUrlTemplate(), value.getCredentialProfile(), value.getResponseFormat())));
+                new NetworkTools.SearchProvider(value.getUrlTemplate(), value.getCredentialProfile(), value.getResponseFormat(), value.getMethod())));
         return result;
     }
     private static String resolveSystemPrompt(MyClawProperties properties) {

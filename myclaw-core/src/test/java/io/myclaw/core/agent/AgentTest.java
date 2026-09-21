@@ -1,6 +1,8 @@
 package io.myclaw.core.agent;
 
 import io.myclaw.core.exception.MaxIterationsException;
+import io.myclaw.core.exception.ToolExecutionException;
+import io.myclaw.core.exception.EmptyModelResponseException;
 import io.myclaw.core.memory.InMemoryMemory;
 import io.myclaw.core.message.Message;
 import io.myclaw.core.message.Role;
@@ -295,6 +297,33 @@ class AgentTest {
         assertThat(recorder.invocations().getFirst().path("payload").asString()).isEqualTo("hello");
     }
 
+    @Test
+    @DisplayName("工具失败后模型返回空内容时保留工具失败语义")
+    void reportsToolFailureWhenModelReturnsEmptyAfterFailure() {
+        ScriptedChatModel model = ScriptedChatModel.create()
+                .thenCallTool("explode", "{}")
+                .thenReply("   ");
+        Agent agent = Agent.builder("t")
+                .model(model)
+                .tools(new ToolRegistry().register(TestTools.exploding()))
+                .build();
+
+        assertThatThrownBy(() -> agent.run("go"))
+                .isInstanceOf(ToolExecutionException.class)
+                .hasMessageContaining("explode");
+    }
+    @Test
+    @DisplayName("模型返回空内容时抛出明确异常")
+    void rejectsEmptyModelResponse() {
+        Agent agent = Agent.builder("t").model(ScriptedChatModel.create().thenReply("   ")).build();
+
+        assertThatThrownBy(() -> agent.run("hi"))
+                .isInstanceOf(EmptyModelResponseException.class)
+                .hasMessageContaining("模型未返回任何有效内容");
+        assertThat(agent.memory().messages())
+                .extracting(Message::role)
+                .containsExactly(Role.USER);
+    }
     @Test
     @DisplayName("空输入直接抛 IllegalArgumentException")
     void rejectsBlankInput() {

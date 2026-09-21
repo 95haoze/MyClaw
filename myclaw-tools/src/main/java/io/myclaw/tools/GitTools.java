@@ -57,6 +57,65 @@ public final class GitTools {
                 });
     }
 
+    public static Tool show() {
+        return tool("git_show", "Show one commit or object without external text converters.",
+                JsonSchema.object().string("revision", "Revision or object name; defaults to HEAD", false)
+                        .string("path", "Optional workspace-relative path", false).build(),
+                (args, context) -> {
+                    String revision = revision(args, "revision", "HEAD");
+                    List<String> command = new ArrayList<>(List.of("show", "--no-ext-diff", "--no-color", "--stat", "--patch", revision));
+                    addOptionalPath(command, args, context);
+                    return runInRepo(context, command);
+                });
+    }
+
+    public static Tool blame() {
+        return tool("git_blame", "Show line-by-line authorship for one workspace file.",
+                JsonSchema.object().string("path", "Workspace-relative file path")
+                        .string("revision", "Optional revision; defaults to the working tree", false).build(),
+                (args, context) -> {
+                    String path = literalPath(context, ToolSupport.requiredString(args, "path"));
+                    String revision = revision(args, "revision", "");
+                    List<String> command = new ArrayList<>(List.of("blame", "--line-porcelain"));
+                    if (!revision.isEmpty()) command.add(revision);
+                    command.add("--"); command.add(path);
+                    return runInRepo(context, command);
+                });
+    }
+
+    public static Tool stash() {
+        return tool("git_stash", "List, push, or pop Git stashes. Pop changes the working tree.",
+                JsonSchema.object().enumOf("action", "Stash action", List.of("list", "push", "pop"))
+                        .string("message", "Optional message for push", false)
+                        .bool("includeUntracked", "Include untracked files when pushing", false).build(),
+                (args, context) -> {
+                    String action = ToolSupport.requiredString(args, "action");
+                    if ("list".equals(action)) return runInRepo(context, List.of("stash", "list"));
+                    if ("pop".equals(action)) return runInRepo(context, List.of("stash", "pop"));
+                    if (!"push".equals(action)) throw new IllegalArgumentException("Unsupported stash action: " + action);
+                    List<String> command = new ArrayList<>(List.of("stash", "push"));
+                    if (ToolSupport.optionalBool(args, "includeUntracked", false)) command.add("--include-untracked");
+                    String message = ToolSupport.optionalString(args, "message", "");
+                    if (!message.isEmpty()) { command.add("-m"); command.add(message); }
+                    return runInRepo(context, command);
+                });
+    }
+
+    public static Tool tag() {
+        return tool("git_tag", "List, create, or delete local tags.",
+                JsonSchema.object().enumOf("action", "Tag action", List.of("list", "create", "delete"))
+                        .string("name", "Tag name for create/delete", false)
+                        .string("revision", "Revision for create; defaults to HEAD", false).build(),
+                (args, context) -> {
+                    String action = ToolSupport.requiredString(args, "action");
+                    if ("list".equals(action)) return runInRepo(context, List.of("tag", "--list"));
+                    String name = refName(args, "name");
+                    if ("delete".equals(action)) return runInRepo(context, List.of("tag", "-d", name));
+                    if ("create".equals(action)) return runInRepo(context, List.of("tag", name, revision(args, "revision", "HEAD")));
+                    throw new IllegalArgumentException("Unsupported tag action: " + action);
+                });
+    }
+
     public static Tool add() {
         return tool("git_add", "Stage explicit workspace paths. Use paths=['.'] to stage all workspace changes.",
                 JsonSchema.object().arrayOfStrings("paths", "Paths to stage").build(),
@@ -192,6 +251,21 @@ public final class GitTools {
         Path path = context.resolve(raw);
         String relative = context.workingDirectory().relativize(path).toString().replace('\\', '/');
         return ":(literal)" + relative;
+    }
+
+    private static String revision(JsonNode args, String field, String defaultValue) {
+        String value = ToolSupport.optionalString(args, field, defaultValue);
+        if (value.length() > 255 || value.startsWith("-") || !value.matches("[A-Za-z0-9_./~^{}:@+-]*"))
+            throw new IllegalArgumentException("Invalid revision: " + value);
+        return value;
+    }
+
+    private static String refName(JsonNode args, String field) {
+        String value = ToolSupport.requiredString(args, field);
+        if (value.length() > 255 || value.startsWith("-") || !value.matches("[A-Za-z0-9][A-Za-z0-9._/-]*") ||
+                value.contains("..") || value.contains("//") || value.endsWith("/") || value.endsWith("."))
+            throw new IllegalArgumentException("Invalid ref name: " + value);
+        return value;
     }
 
     private static String branchName(JsonNode args) {

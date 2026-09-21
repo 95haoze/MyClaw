@@ -34,6 +34,13 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- Playwright Java：浏览器自动化，浏览器二进制需额外执行 playwright install chromium -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.52.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

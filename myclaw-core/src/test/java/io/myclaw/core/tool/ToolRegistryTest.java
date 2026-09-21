@@ -99,6 +99,26 @@ class ToolRegistryTest {
     }
 
     @Test
+    @DisplayName("HTTP 连接超时转换为中文错误")
+    void describesHttpConnectTimeoutInChinese() {
+        Tool timeoutTool = new Tool() {
+            @Override
+            public ToolDefinition definition() {
+                return ToolDefinition.builder("timeout").build();
+            }
+
+            @Override
+            public String call(JsonNode arguments, ToolContext context) throws Exception {
+                throw new java.net.http.HttpConnectTimeoutException("HTTP connect timed out");
+            }
+        };
+        ToolResult result = new ToolRegistry().register(timeoutTool)
+                .execute(ToolCall.of("timeout", "{}"), ToolContext.defaults());
+
+        assertThat(result.error()).isTrue();
+        assertThat(result.content()).contains("HTTP 连接超时").contains("代理配置");
+    }
+    @Test
     @DisplayName("参数不是合法 JSON 时，回填解析错误且不执行工具")
     void malformedArgumentsProduceParseError() {
         TestTools.Recorder recorder = new TestTools.Recorder("rec");

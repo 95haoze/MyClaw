@@ -1,6 +1,7 @@
 package io.myclaw.server.error;
 
 import io.myclaw.core.exception.MaxIterationsException;
+import io.myclaw.core.exception.EmptyModelResponseException;
 import io.myclaw.core.exception.ModelException;
 import io.myclaw.core.exception.ToolExecutionException;
 import org.springframework.dao.DataAccessException;
@@ -54,7 +55,23 @@ public record ApiErrorDescriptor(
                     true
             );
         }
+        if (cause instanceof EmptyModelResponseException) {
+            return new ApiErrorDescriptor(
+                    HttpStatus.BAD_GATEWAY,
+                    "MODEL_EMPTY_RESPONSE",
+                    "模型未返回有效内容，请检查模型名称、服务地址和 API Key 后重试。",
+                    true
+            );
+        }
         if (cause instanceof ModelException modelError) {
+            if (modelError.statusCode() == 401 || modelError.statusCode() == 403) {
+                return new ApiErrorDescriptor(
+                        HttpStatus.BAD_GATEWAY,
+                        "MODEL_AUTH_FAILED",
+                        "模型服务鉴权失败，请检查 API Key 是否正确或已失效。",
+                        false
+                );
+            }
             if (modelError.statusCode() == 429) {
                 return new ApiErrorDescriptor(
                         HttpStatus.TOO_MANY_REQUESTS,

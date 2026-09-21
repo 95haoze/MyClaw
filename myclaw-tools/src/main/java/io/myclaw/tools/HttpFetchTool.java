@@ -76,6 +76,8 @@ public class HttpFetchTool implements Tool {
     public ToolDefinition definition() {
         return ToolDefinition.builder("http_fetch")
                 .description("""
+                        IMPORTANT: This is not a search engine. Use it only for a known explicit URL supplied by the user or returned by web_search.
+                        If web_search is unavailable, explain that web search is not configured; never invent a search URL.
                         发起 HTTP 请求并返回响应正文的纯文本（HTML 会被去除标签、脚本与样式，最长 20000 字符）。
                         仅支持 http/https，超时 20 秒，自动跟随重定向。用于查阅网页或调用 REST 接口。""")
                 .parameters(JsonSchema.object()

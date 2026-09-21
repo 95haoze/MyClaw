@@ -37,10 +37,10 @@ class BuiltinToolsTest {
     void allContainsEveryTool() {
         List<Tool> tools = BuiltinTools.all();
 
-        assertThat(tools).hasSize(24);
+        assertThat(tools).hasSize(33);
         assertThat(tools.stream().map(Tool::name))
                 .containsExactlyInAnyOrder("calculate", "current_time", "read_file", "write_file",
-                        "list_files", "search_text", "replace_text", "manage_file", "batch_replace_text", "git_status", "git_diff", "git_log", "git_add", "git_reset", "git_commit", "git_branch", "git_checkout", "find_symbol", "find_references", "code_outline", "code_diagnostics", "http_fetch", "execute_code", "run_command");
+                        "list_files", "search_text", "replace_text", "manage_file", "batch_replace_text", "git_status", "git_diff", "git_log", "git_add", "git_reset", "git_commit", "git_branch", "git_checkout", "git_show", "git_blame", "git_stash", "git_tag", "find_symbol", "find_references", "code_outline", "code_diagnostics", "http_fetch", "detect_project", "build_project", "run_tests", "run_test_case", "lint_project", "execute_code", "run_command");
 
         Tool shell = tools.stream().filter(tool -> "run_command".equals(tool.name())).findFirst().orElseThrow();
         assertThat(shell.enabled()).isFalse();
@@ -51,7 +51,7 @@ class BuiltinToolsTest {
     void registeringAllSkipsDisabledShell() {
         ToolRegistry registry = new ToolRegistry().registerAll(BuiltinTools.all());
 
-        assertThat(registry.size()).isEqualTo(22);
+        assertThat(registry.size()).isEqualTo(31);
         assertThat(registry.contains("run_command")).isFalse();
         assertThat(registry.contains("write_file")).isTrue();
         assertThat(registry.names()).contains("calculate", "current_time", "read_file", "list_files", "http_fetch");
@@ -70,7 +70,7 @@ class BuiltinToolsTest {
         assertThat(shellOnly.contains("write_file")).isFalse();
 
         ToolRegistry full = BuiltinTools.registry(true, true);
-        assertThat(full.size()).isEqualTo(23);
+        assertThat(full.size()).isEqualTo(32);
         assertThat(full.contains("run_command")).isTrue();
         assertThat(full.contains("write_file")).isTrue();
         assertThat(full.find("calculate")).isPresent();

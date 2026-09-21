@@ -149,10 +149,14 @@ export function useChat(options: UseChatOptions) {
 
             const target = session.messages[assistantIndex]
             if (target) {
+                const finalContent = result.content?.trim() ? result.content : target.content
+                if (!finalContent?.trim()) {
+                    throw new Error('模型未返回有效内容，请检查模型名称、服务地址和 API Key 后重试。')
+                }
                 session.messages[assistantIndex] = {
                     ...target,
                     id: result.messageId ?? undefined,
-                    content: result.content,
+                    content: finalContent,
                     tools: result.tools,
                     durationMillis: result.durationMillis,
                 }

@@ -29,7 +29,7 @@ public final class BuiltinTools {
      * @return 不可变工具列表
      */
     public static List<Tool> all() {
-        return List.of(calculator(), currentTime(), readFile(), writeFile(), listFiles(), searchText(), replaceText(), manageFile(), batchReplaceText(), gitStatus(), gitDiff(), gitLog(), gitAdd(), gitReset(), gitCommit(), gitBranch(), gitCheckout(), findSymbol(), findReferences(), codeOutline(), codeDiagnostics(), httpFetch(), new CodeExecuteTool(), new ShellTool());
+        return List.of(calculator(), currentTime(), readFile(), writeFile(), listFiles(), searchText(), replaceText(), manageFile(), batchReplaceText(), gitStatus(), gitDiff(), gitLog(), gitAdd(), gitReset(), gitCommit(), gitBranch(), gitCheckout(), gitShow(), gitBlame(), gitStash(), gitTag(), findSymbol(), findReferences(), codeOutline(), codeDiagnostics(), httpFetch(), projectDetect(), projectBuild(), projectTests(), projectTestCase(), projectLint(), new CodeExecuteTool(), new ShellTool());
     }
 
     /**
@@ -137,6 +137,25 @@ public final class BuiltinTools {
         return GitTools.checkout();
     }
 
+    public static Tool gitShow() { return GitTools.show(); }
+    public static Tool gitBlame() { return GitTools.blame(); }
+    public static Tool gitStash() { return GitTools.stash(); }
+    public static Tool gitTag() { return GitTools.tag(); }
+
+    public static Tool projectDetect() { return ProjectTools.detect(); }
+    public static Tool projectBuild() { return ProjectTools.build(); }
+    public static Tool projectTests() { return ProjectTools.tests(); }
+    public static Tool projectTestCase() { return ProjectTools.testCase(); }
+    public static Tool projectLint() { return ProjectTools.lint(); }
+
+    public static BackgroundProcessTools backgroundProcesses(List<String> allowlistPrefixes) {
+        return new BackgroundProcessTools(allowlistPrefixes);
+    }
+
+    public static BrowserAutomationTools browser(List<String> allowedHosts, boolean allowPrivateNetwork, boolean headless) {
+        return new BrowserAutomationTools(allowedHosts, allowPrivateNetwork, headless);
+    }
+
     public static Tool findSymbol() {
         return JavaCodeTools.findSymbol();
     }
@@ -229,6 +248,15 @@ public final class BuiltinTools {
             registry.register(gitCommit());
             registry.register(gitBranch());
             registry.register(gitCheckout());
+            registry.register(gitShow());
+            registry.register(gitBlame());
+            registry.register(gitStash());
+            registry.register(gitTag());
+            registry.register(projectDetect());
+            registry.register(projectBuild());
+            registry.register(projectTests());
+            registry.register(projectTestCase());
+            registry.register(projectLint());
             registry.register(findSymbol());
             registry.register(findReferences());
             registry.register(codeOutline());

@@ -6,6 +6,7 @@ import io.myclaw.core.tool.ToolContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tools.jackson.databind.JsonNode;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -99,4 +100,37 @@ class NetworkToolsTest {
 
         assertThat(result).contains("1. Java Records", "URL: https://example.com/records", "Concise data carriers")
                 .doesNotContain("server-secret", "{\"web\"");
+    }
+    @Test
+    void tavilySearchUsesPostJsonAndNormalizesResults() throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/search", exchange -> {
+            assertThat(exchange.getRequestMethod()).isEqualTo("POST");
+            assertThat(exchange.getRequestHeaders().getFirst("Authorization")).isEqualTo("Bearer tavily-secret");
+            assertThat(exchange.getRequestHeaders().getFirst("Content-Type")).isEqualTo("application/json");
+            JsonNode request = Json.parse(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            assertThat(request.path("query").asString()).isEqualTo("Spring Boot 4");
+            assertThat(request.path("search_depth").asString()).isEqualTo("basic");
+            assertThat(request.path("max_results").asInt()).isEqualTo(10);
+            byte[] body = """
+                    {"results":[
+                      {"title":"Spring Boot","url":"https://spring.io/projects/spring-boot","content":"Official project page"}
+                    ]}
+                    """.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        String base = "http://127.0.0.1:" + server.getAddress().getPort();
+        var credentials = Map.of("tavily", new NetworkTools.CredentialProfile(base + "/", Map.of(
+                "Authorization", "Bearer tavily-secret", "Content-Type", "application/json"), true));
+        var providers = Map.of("tavily", new NetworkTools.SearchProvider(
+                base + "/search", "tavily", "tavily", "POST"));
+
+        String result = NetworkTools.webSearch(providers, credentials).call(
+                Json.obj().put("query", "Spring Boot 4"), ToolContext.of(workspace));
+
+        assertThat(result).contains("1. Spring Boot", "URL: https://spring.io/projects/spring-boot", "Official project page")
+                .doesNotContain("tavily-secret");
     }}

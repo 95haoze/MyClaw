@@ -1,6 +1,7 @@
 package io.myclaw.server.error;
 
 import io.myclaw.core.exception.MaxIterationsException;
+import io.myclaw.core.exception.EmptyModelResponseException;
 import io.myclaw.core.exception.ModelException;
 import io.myclaw.core.exception.ToolExecutionException;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,15 @@ class ApiErrorDescriptorTest {
     }
 
     @Test
+    void mapsModelAuthenticationFailure() {
+        ApiErrorDescriptor descriptor = ApiErrorDescriptor.from(new ModelException("unauthorized", 401, null));
+
+        assertThat(descriptor.status()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(descriptor.code()).isEqualTo("MODEL_AUTH_FAILED");
+        assertThat(descriptor.message()).contains("API Key");
+        assertThat(descriptor.retryable()).isFalse();
+    }
+    @Test
     void mapsModelRateLimit() {
         assertDescriptor(new ModelException("limited", 429, null), HttpStatus.TOO_MANY_REQUESTS,
                 "MODEL_RATE_LIMIT", true);
@@ -50,6 +60,15 @@ class ApiErrorDescriptorTest {
         assertDescriptor(error, HttpStatus.GATEWAY_TIMEOUT, "MODEL_TIMEOUT", true);
     }
 
+    @Test
+    void mapsEmptyModelResponse() {
+        ApiErrorDescriptor descriptor = ApiErrorDescriptor.from(new EmptyModelResponseException());
+
+        assertThat(descriptor.status()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(descriptor.code()).isEqualTo("MODEL_EMPTY_RESPONSE");
+        assertThat(descriptor.message()).contains("模型未返回有效内容");
+        assertThat(descriptor.retryable()).isTrue();
+    }
     @Test
     void mapsOtherModelFailures() {
         assertDescriptor(new ModelException("upstream", 500, null), HttpStatus.BAD_GATEWAY,
