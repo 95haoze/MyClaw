@@ -10,8 +10,9 @@ import WelcomePanel from './components/chat/WelcomePanel.vue'
 import AppSidebar from './components/layout/AppSidebar.vue'
 import SettingsModal from './components/settings/SettingsModal.vue'
 import {useWorkspace} from './composables'
-import type {CurrentUser} from './api'
-import { PanelLeftOpen, PawPrint, Plus } from 'lucide-vue-next'
+import {ref} from 'vue'
+import {selectWorkspaceDirectory, type CurrentUser} from './api'
+import {PanelLeftOpen, PawPrint, Plus} from 'lucide-vue-next'
 import Button from './components/ui/button/Button.vue'
 
 defineProps<{ currentUser: CurrentUser }>()
@@ -20,6 +21,10 @@ const emit = defineEmits<{ logout: [] }>()
 const {
   // 设置
   endpoint,
+  workingDirectory,
+  workspaces,
+  removeWorkspace,
+  permissionMode,
   modalOpen,
   // 主题
   isDark,
@@ -55,6 +60,21 @@ const {
   sidebarCollapsed,
   scroller,
 } = useWorkspace()
+
+async function addWorkspace(): Promise<void> {
+  try {
+    const selected = await selectWorkspaceDirectory()
+    if (selected) workingDirectory.value = selected
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : '无法打开系统目录选择器'
+  }
+}
+
+function handleComposerCommand(name: string): void {
+  if (name === 'new') void newChat()
+  else if (name === 'clear') void clearCurrent()
+}
+
 function openSidebar(): void {
   if (window.matchMedia('(max-width: 820px)').matches) sidebarOpen.value = true
   else sidebarCollapsed.value = false
@@ -84,6 +104,8 @@ function openSidebar(): void {
         :current-user="currentUser"
         :is-dark="isDark"
         :has-messages="Boolean(current?.messages.length)"
+        :workspaces="workspaces"
+        :working-directory="workingDirectory"
         @new-chat="newChat"
         @select="selectSession"
         @rename="renameSession"
@@ -93,14 +115,21 @@ function openSidebar(): void {
         @close="sidebarOpen = false"
         @clear="clearCurrent"
         @toggle-theme="toggleTheme"
-        @logout="emit('logout')"/>
+        @logout="emit('logout')"
+        @add-workspace="addWorkspace"
+        @select-workspace="workingDirectory = $event"
+        @remove-workspace="removeWorkspace"/>
 
     <main id="main-content" class="main" tabindex="-1">
       <header class="workspace-header">
-        <span class="header-brand" aria-hidden="true"><PawPrint :size="18" /></span>
+        <span class="header-brand" aria-hidden="true"><PawPrint :size="18"/></span>
         <div class="header-controls" aria-label="页面快捷操作">
-          <Button variant="ghost" size="icon" aria-label="打开侧边栏" @click="openSidebar"><PanelLeftOpen :size="18" /></Button>
-          <Button variant="ghost" size="icon" aria-label="新建对话" :disabled="busy" @click="newChat"><Plus :size="18" /></Button>
+          <Button variant="ghost" size="icon" aria-label="打开侧边栏" @click="openSidebar">
+            <PanelLeftOpen :size="18"/>
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="新建对话" :disabled="busy" @click="newChat">
+            <Plus :size="18"/>
+          </Button>
         </div>
         <span class="header-title">{{ current?.title || '新对话' }}</span>
       </header>
@@ -111,6 +140,8 @@ function openSidebar(): void {
 
       <ChatComposer
           v-model="draft"
+          v-model:working-directory="workingDirectory"
+          v-model:permission-mode="permissionMode"
           :busy="busy"
           :current-user="currentUser"
           :attachments="attachments"
@@ -121,18 +152,19 @@ function openSidebar(): void {
           @remove-file="removeFile"
           @send="send()"
           @stop="stop()"
+          @command="handleComposerCommand"
       />
     </main>
 
     <AppDialog
-      v-model:open="sessionDialog.open"
-      :title="sessionDialog.title"
-      :description="sessionDialog.description"
-      :confirm-text="sessionDialog.confirmText"
-      :default-value="sessionDialog.defaultValue"
-      :input-label="sessionDialog.inputLabel"
-      :danger="sessionDialog.danger"
-      @confirm="confirmSessionDialog"
+        v-model:open="sessionDialog.open"
+        :title="sessionDialog.title"
+        :description="sessionDialog.description"
+        :confirm-text="sessionDialog.confirmText"
+        :default-value="sessionDialog.defaultValue"
+        :input-label="sessionDialog.inputLabel"
+        :danger="sessionDialog.danger"
+        @confirm="confirmSessionDialog"
     />
 
     <SettingsModal
@@ -145,20 +177,102 @@ function openSidebar(): void {
 </template>
 
 <style scoped>
-.workspace { display:flex; height:100dvh; min-height:520px; background:var(--bg-app); }
-.main { flex:1; min-width:0; display:flex; flex-direction:column; }
-.workspace-header { flex:0 0 64px; display:flex; align-items:center; gap:12px; min-width:0; padding:0 28px; background:var(--bg-app); }
-.header-brand { display:none; place-items:center; width:34px; height:34px; flex:0 0 auto; border-radius:10px; background:var(--text-primary); color:var(--bg-surface); }
-.header-controls { display:none; align-items:center; gap:2px; padding:3px; border:1px solid var(--border); border-radius:13px; background:color-mix(in srgb, var(--bg-surface) 88%, transparent); }
-.header-title { min-width:0; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:560; color:var(--text-primary); }
-.sidebar-collapsed .header-brand, .sidebar-collapsed .header-controls { display:flex; }
-.conversation { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
-.scrim { display:none; }
-@media (max-width:820px) {
-  .workspace { min-height:0; }
-  .workspace-header { flex-basis:58px; gap:8px; padding:0 10px; }
-  .header-brand, .header-controls { display:flex; }
-  .header-title { max-width:calc(100vw - 170px); }
-  .scrim { display:block; position:fixed; inset:0; z-index:var(--z-scrim); background:rgba(24,24,27,.4); }
+.workspace {
+  display: flex;
+  height: 100dvh;
+  min-height: 520px;
+  background: var(--bg-app);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-header {
+  flex: 0 0 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0 28px;
+  background: var(--bg-app);
+}
+
+.header-brand {
+  display: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: var(--text-primary);
+  color: var(--bg-surface);
+}
+
+.header-controls {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+}
+
+.header-title {
+  min-width: 0;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 560;
+  color: var(--text-primary);
+}
+
+.sidebar-collapsed .header-brand, .sidebar-collapsed .header-controls {
+  display: flex;
+}
+
+.conversation {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.scrim {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .workspace {
+    min-height: 0;
+  }
+
+  .workspace-header {
+    flex-basis: 58px;
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .header-brand, .header-controls {
+    display: flex;
+  }
+
+  .header-title {
+    max-width: calc(100vw - 170px);
+  }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-scrim);
+    background: rgba(24, 24, 27, .4);
+  }
 }
 </style>

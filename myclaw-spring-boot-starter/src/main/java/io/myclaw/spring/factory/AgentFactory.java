@@ -35,20 +35,28 @@ public class AgentFactory {
     }
 
     public Agent create(String name, Collection<Message> initialMessages) {
+        return create(name, initialMessages, Path.of(properties.getWorkingDirectory()), "workspace-write");
+    }
+
+    public Agent create(String name, Collection<Message> initialMessages, Path workingDirectory) {
+        return create(name, initialMessages, workingDirectory, "workspace-write" );
+    }
+
+    public Agent create(String name, Collection<Message> initialMessages, Path workingDirectory, String permissionMode) {
         InMemoryMemory memory = new InMemoryMemory(properties.getMemory().getMaxMessages());
         memory.addAll(initialMessages);
 
         Agent.Builder builder = Agent.builder(name)
                 .model(chatModel)
-                .tools(toolRegistry)
+                .tools(toolsFor(permissionMode))
                 .memory(memory)
-                .systemPrompt(resolveSystemPrompt())
+                .systemPrompt(resolveSystemPrompt(workingDirectory))
                 .maxIterations(properties.getMaxIterations())
                 .options(ChatOptions.builder()
                         .temperature(properties.getTemperature())
                         .maxTokens(properties.getMaxTokens())
                         .build())
-                .toolContext(ToolContext.of(Path.of(properties.getWorkingDirectory())));
+                .toolContext(ToolContext.of(workingDirectory));
 
         if (properties.isLoggingHook()) {
             builder.hook(new LoggingHook());
@@ -57,7 +65,16 @@ public class AgentFactory {
         return builder.build();
     }
 
-    private String resolveSystemPrompt() {
+
+    private ToolRegistry toolsFor(String mode) {
+        if ("full-access".equals(mode)) return toolRegistry;
+        java.util.Set<String> blocked = "read-only".equals(mode) ? java.util.Set.of(
+                "write_file", "replace_text", "batch_replace_text", "file_manage", "run_command",
+                "execute_code", "download_file", "database_execute", "git_add", "git_reset",
+                "git_commit", "git_branch", "git_checkout") : java.util.Set.of("database_execute");
+        return toolRegistry.filtered(name -> !blocked.contains(name));
+    }
+    private String resolveSystemPrompt(Path workingDirectory) {
         String prompt = properties.getSystemPrompt();
         if (prompt == null || prompt.isBlank()) {
             prompt = AgentPrompts.DEFAULT;
@@ -70,8 +87,8 @@ public class AgentFactory {
         if (hasFileTools && AgentPrompts.DEFAULT.equals(prompt)) {
             boolean codingTools = tools.isSearchText() && tools.isReplaceText() && tools.isShell();
             return codingTools
-                    ? AgentPrompts.codingWithWorkingDirectory(Path.of(properties.getWorkingDirectory()))
-                    : AgentPrompts.withWorkingDirectory(Path.of(properties.getWorkingDirectory()));
+                    ? AgentPrompts.codingWithWorkingDirectory(workingDirectory)
+                    : AgentPrompts.withWorkingDirectory(workingDirectory);
         }
         return prompt;
     }

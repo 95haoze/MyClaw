@@ -93,9 +93,13 @@ public final class ToolRegistry {
         return tools.values().stream().map(Tool::definition).toList();
     }
 
-    /**
-     * 执行一次工具调用。任何异常都会被吞掉并转换成错误结果，保证 Agent 循环不中断。
-     */
+    /** 创建只暴露符合策略的工具注册表。 */
+    public ToolRegistry filtered(java.util.function.Predicate<String> allowed) {
+        ToolRegistry filtered = new ToolRegistry();
+        tools.forEach((name, tool) -> { if (allowed.test(name)) filtered.register(tool); });
+        return filtered;
+    }
+    /** 执行一次工具调用，并将异常转换为失败结果。 */
     public ToolResult execute(ToolCall call, ToolContext context) {
         long startedAt = System.nanoTime();
         Tool tool = tools.get(call.name());

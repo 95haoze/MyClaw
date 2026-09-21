@@ -17,14 +17,17 @@ public class ChatService {
     private final AgentSessionManager agentSessionManager;
     private final ChatHistoryService chatHistoryService;
     private final AttachmentService attachmentService;
+    private final WorkspacePathService workspacePathService;
 
     public ChatService(
             AgentSessionManager agentSessionManager,
-            ChatHistoryService chatHistoryService, AttachmentService attachmentService
+            ChatHistoryService chatHistoryService, AttachmentService attachmentService,
+            WorkspacePathService workspacePathService
     ) {
         this.agentSessionManager = agentSessionManager;
         this.chatHistoryService = chatHistoryService;
         this.attachmentService = attachmentService;
+        this.workspacePathService = workspacePathService;
     }
 
     public ChatResponse chat(ChatRequest request) {
@@ -38,7 +41,7 @@ public class ChatService {
         chatHistoryService.beginRequest(requestId, sessionId, content, request.attachmentIds());
         try {
             ChatResponse response = agentSessionManager.execute(
-                    sessionId,
+                    sessionId, workspacePathService.resolve(request.workingDirectory()), request.permissionMode(),
                     agent -> ChatResponse.from(agent.run(content + attachmentService.context(sessionId, request.attachmentIds())))
             );
             Long messageId = chatHistoryService.completeRequest(requestId, sessionId, response);

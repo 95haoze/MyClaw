@@ -8,6 +8,8 @@ public record ChatRequest(
         // 代表整个对话
         String sessionId,
         List<ChatMessage> messages,
-        List<String> attachmentIds
+        List<String> attachmentIds,
+        String workingDirectory,
+        String permissionMode
 ) {
 }

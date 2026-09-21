@@ -37,18 +37,21 @@ public class StreamingChatService {
     private final AgentSessionManager agentSessionManager;
     private final ChatHistoryService chatHistoryService;
     private final AttachmentService attachmentService;
+    private final WorkspacePathService workspacePathService;
 
     public StreamingChatService(
             @Qualifier("streamingExecutor") AsyncTaskExecutor streamingExecutor,
             RunningRequestManager runningRequestManager,
             AgentSessionManager agentSessionManager,
-            ChatHistoryService chatHistoryService, AttachmentService attachmentService
+            ChatHistoryService chatHistoryService, AttachmentService attachmentService,
+            WorkspacePathService workspacePathService
     ) {
         this.streamingExecutor = streamingExecutor;
         this.runningRequestManager = runningRequestManager;
         this.agentSessionManager = agentSessionManager;
         this.chatHistoryService = chatHistoryService;
         this.attachmentService = attachmentService;
+        this.workspacePathService = workspacePathService;
     }
 
     public SseEmitter stream(ChatRequest request) {
@@ -65,7 +68,7 @@ public class StreamingChatService {
 
         try {
             Future<?> future = streamingExecutor.submit(() -> execute(
-                    requestId, sessionId, content, request.attachmentIds(), runningRequest, emitter
+                    requestId, sessionId, content, request.attachmentIds(), request.workingDirectory(), request.permissionMode(), runningRequest, emitter
             ));
             runningRequest.attachFuture(future);
         } catch (RejectedExecutionException exception) {
@@ -89,6 +92,8 @@ public class StreamingChatService {
             String sessionId,
             String content,
             java.util.List<String> attachmentIds,
+            String workingDirectory,
+            String permissionMode,
             RunningRequest runningRequest,
             SseEmitter emitter
     ) {
@@ -103,7 +108,7 @@ public class StreamingChatService {
             send(emitter, runningRequest, "start", new ChatStreamEvents.Start(requestId, userMessageId));
 
             AgentResponse agentResponse = agentSessionManager.execute(
-                    sessionId,
+                    sessionId, workspacePathService.resolve(workingDirectory), permissionMode,
                     agent -> agent.run(content + attachmentService.context(sessionId, attachmentIds), listener(runningRequest, emitter, partialContent))
             );
             ChatResponse response = ChatResponse.from(agentResponse);

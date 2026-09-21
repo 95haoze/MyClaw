@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { MessageSquare, Pencil, Trash2 } from 'lucide-vue-next'
-import { computed } from 'vue'
-import type { Session } from '../../types'
-import { formatRelativeTime } from '../../utils/format'
+import {MessageSquare, Pencil, Trash2} from 'lucide-vue-next'
+import {computed} from 'vue'
+import type {Session} from '../../types'
+import {formatRelativeTime} from '../../utils/format'
 
 const props = defineProps<{
   session: Session
@@ -36,35 +36,35 @@ const timeLabel = computed(() => {
 <template>
   <div class="session-item" :class="{ active }">
     <button
-      type="button"
-      class="select"
-      :disabled="busy"
-      :aria-current="active ? 'page' : undefined"
-      @click="emit('select', session.id)"
+        type="button"
+        class="select"
+        :disabled="busy"
+        :aria-current="active ? 'page' : undefined"
+        @click="emit('select', session.id)"
     >
-      <MessageSquare :size="15" class="icon" />
+      <MessageSquare :size="15" class="icon"/>
       <span class="title">{{ session.title }}</span>
       <span v-if="timeLabel" class="time">{{ timeLabel }}</span>
     </button>
 
     <div class="actions">
       <button
-        type="button"
-        class="action"
-        :disabled="busy"
-        :aria-label="`重命名对话：${session.title}`"
-        @click.stop="emit('rename', session)"
+          type="button"
+          class="action"
+          :disabled="busy"
+          :aria-label="`重命名对话：${session.title}`"
+          @click.stop="emit('rename', session)"
       >
-        <Pencil :size="13" />
+        <Pencil :size="13"/>
       </button>
       <button
-        type="button"
-        class="action danger"
-        :disabled="busy"
-        :aria-label="`删除对话：${session.title}`"
-        @click.stop="emit('remove', session.id)"
+          type="button"
+          class="action danger"
+          :disabled="busy"
+          :aria-label="`删除对话：${session.title}`"
+          @click.stop="emit('remove', session.id)"
       >
-        <Trash2 :size="13" />
+        <Trash2 :size="13"/>
       </button>
     </div>
   </div>
@@ -157,8 +157,20 @@ const timeLabel = computed(() => {
 }
 
 @media (hover: none), (max-width: 820px) {
-  .select { min-height: 44px; }
-  .actions { opacity: 1; }
-  .action { width: 40px; height: 40px; }
-  .time { display: none; }
+  .select {
+    min-height: 44px;
+  }
+
+  .actions {
+    opacity: 1;
+  }
+
+  .action {
+    width: 40px;
+    height: 40px;
+  }
+
+  .time {
+    display: none;
+  }
 }</style>

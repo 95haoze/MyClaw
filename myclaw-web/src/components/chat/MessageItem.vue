@@ -27,15 +27,24 @@ async function onMarkdownClick(event: MouseEvent) {
   await navigator.clipboard.writeText(code)
   button.textContent = '已复制'
   button.classList.add('copied')
-  window.setTimeout(() => { button.textContent = '复制'; button.classList.remove('copied') }, 1600)
+  window.setTimeout(() => {
+    button.textContent = '复制';
+    button.classList.remove('copied')
+  }, 1600)
 }
 
 async function copy() {
   await navigator.clipboard.writeText(props.message.content)
 }
 
-function edit() { editOpen.value = true }
-function confirmEdit(text: string) { editOpen.value = false; if (text) emit('edit', text) }
+function edit() {
+  editOpen.value = true
+}
+
+function confirmEdit(text: string) {
+  editOpen.value = false;
+  if (text) emit('edit', text)
+}
 
 async function toggleFeedback(value: 'up' | 'down') {
   if (!props.message.id || savingFeedback.value) return
@@ -88,11 +97,13 @@ async function toggleFeedback(value: 'up' | 'down') {
           <button type="button" title="重新生成" aria-label="重新生成回答" @click="emit('regenerate')">
             <RefreshCw :size="13"/>
           </button>
-          <button type="button" aria-label="标记回答有帮助" :aria-pressed="feedback === 'up'" :class="{ on: feedback === 'up' }" :disabled="!message.id || savingFeedback" title="有帮助"
+          <button type="button" aria-label="标记回答有帮助" :aria-pressed="feedback === 'up'"
+                  :class="{ on: feedback === 'up' }" :disabled="!message.id || savingFeedback" title="有帮助"
                   @click="toggleFeedback('up')">
             <ThumbsUp :size="13"/>
           </button>
-          <button type="button" aria-label="标记回答没有帮助" :aria-pressed="feedback === 'down'" :class="{ on: feedback === 'down' }" :disabled="!message.id || savingFeedback" title="没有帮助"
+          <button type="button" aria-label="标记回答没有帮助" :aria-pressed="feedback === 'down'"
+                  :class="{ on: feedback === 'down' }" :disabled="!message.id || savingFeedback" title="没有帮助"
                   @click="toggleFeedback('down')">
             <ThumbsDown :size="13"/>
           </button>
@@ -100,7 +111,8 @@ async function toggleFeedback(value: 'up' | 'down') {
       </div>
     </template>
   </article>
-  <AppDialog v-model:open="editOpen" title="编辑后重发" description="修改这条消息并作为新的请求发送。" input-label="消息内容" confirm-text="发送" :default-value="message.content" @confirm="confirmEdit" />
+  <AppDialog v-model:open="editOpen" title="编辑后重发" description="修改这条消息并作为新的请求发送。"
+             input-label="消息内容" confirm-text="发送" :default-value="message.content" @confirm="confirmEdit"/>
 </template>
 <style scoped>
 .message.user {
@@ -226,8 +238,21 @@ async function toggleFeedback(value: 'up' | 'down') {
 }
 
 @media (hover: none), (max-width: 820px) {
-  .actions { opacity: 1; }
-  .actions button { width: 40px; height: 40px; }
-  .user-content { max-width: 92%; }
-  .files img { width: 132px; height: 96px; }
+  .actions {
+    opacity: 1;
+  }
+
+  .actions button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-content {
+    max-width: 92%;
+  }
+
+  .files img {
+    width: 132px;
+    height: 96px;
+  }
 }</style>

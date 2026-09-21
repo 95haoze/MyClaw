@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
+import type {Component} from 'vue'
 
 withDefaults(
-  defineProps<{
-    icon: Component
-    /** 同时作为 aria-label 和原生 tooltip，无障碍与鼠标悬停共用一份文案。 */
-    label: string
-    size?: number
-    disabled?: boolean
-  }>(),
-  { size: 16, disabled: false },
+    defineProps<{
+      icon: Component
+      /** 同时作为 aria-label 和原生 tooltip，无障碍与鼠标悬停共用一份文案。 */
+      label: string
+      size?: number
+      disabled?: boolean
+    }>(),
+    {size: 16, disabled: false},
 )
 </script>
 
 <template>
   <button type="button" class="icon-button" :disabled="disabled" :aria-label="label" :title="label">
-    <component :is="icon" :size="size" />
+    <component :is="icon" :size="size"/>
   </button>
 </template>
 

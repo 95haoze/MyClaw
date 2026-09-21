@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ChevronRight, Wrench } from 'lucide-vue-next'
-import { computed } from 'vue'
-import type { ToolExecution } from '../../api'
-import { formatDuration } from '../../utils/format'
+import {ChevronRight, Wrench} from 'lucide-vue-next'
+import {computed} from 'vue'
+import type {ToolExecution} from '../../api'
+import {formatDuration} from '../../utils/format'
 
 const props = defineProps<{ tools: ToolExecution[] }>()
 
@@ -14,29 +14,37 @@ const STATUS_LABEL: Record<ToolExecution['status'], string> = {
 }
 
 const failedCount = computed(() => props.tools.filter(tool => tool.status === 'failed').length)
+const latest = computed(() => props.tools[props.tools.length - 1])
 </script>
 
 <template>
   <details class="tool-calls">
-    <summary class="tool-calls-summary" aria-label="查看工具调用详情">
-      <Wrench :size="13" class="icon" />
+    <summary class="tool-calls-summary"
+             :aria-label="`查看工具调用详情，共 ${tools.length} 次，最近一次：${latest ? STATUS_LABEL[latest.status] : ''}`">
+      <Wrench :size="13" class="icon"/>
       <span>工具调用</span>
       <span class="count">{{ tools.length }}</span>
-      <span v-if="failedCount" class="failed-badge">{{ failedCount }} 次失败</span>
-      <ChevronRight :size="13" class="chevron" />
+      <span v-if="latest" class="latest-status" :class="latest.status">
+        <span class="dot"/>
+        <span>{{ STATUS_LABEL[latest.status] }}</span>
+        <span v-if="latest.durationMillis" class="latest-duration">{{ formatDuration(latest.durationMillis) }}</span>
+      </span>
+      <span v-if="failedCount" class="failed-badge"><span class="dot"/>{{ failedCount }} 次失败</span>
+      <ChevronRight :size="13" class="chevron"/>
     </summary>
 
     <div class="tool-list">
       <details
-        v-for="tool in tools"
-        :key="tool.id"
-        class="tool-call"
-        :class="tool.status"
-        :open="tool.status === 'failed'"
+          v-for="tool in tools"
+          :key="tool.id"
+          class="tool-call"
+          :class="tool.status"
+          :open="tool.status === 'failed'"
       >
-        <summary :aria-label="`${tool.name}，状态：${STATUS_LABEL[tool.status]}，耗时：${formatDuration(tool.durationMillis)}`">
-          <ChevronRight :size="13" class="chevron" />
-          <Wrench :size="13" class="icon" />
+        <summary
+            :aria-label="`${tool.name}，状态：${STATUS_LABEL[tool.status]}，耗时：${formatDuration(tool.durationMillis)}`">
+          <ChevronRight :size="13" class="chevron"/>
+          <Wrench :size="13" class="icon"/>
           <strong>{{ tool.name }}</strong>
           <span class="status">{{ STATUS_LABEL[tool.status] }}</span>
           <small>{{ formatDuration(tool.durationMillis) }}</small>
@@ -92,9 +100,62 @@ const failedCount = computed(() => props.tools.filter(tool => tool.status === 'f
   text-align: center;
 }
 
+.latest-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.latest-status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.latest-status.running .dot {
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.latest-status.completed .dot {
+  background: var(--success-text);
+}
+
+.latest-status.failed .dot {
+  background: var(--danger-text);
+}
+
+.latest-duration {
+  color: var(--text-faint);
+}
+
 .failed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--danger-soft);
   color: var(--danger-text);
   font-size: 11px;
+  font-weight: 600;
+}
+
+.failed-badge .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .35;
+    transform: scale(.8);
+  }
 }
 
 .tool-calls-summary .chevron {
@@ -210,8 +271,17 @@ const failedCount = computed(() => props.tools.filter(tool => tool.status === 'f
 
 @media (max-width: 820px) {
   .tool-calls-summary,
-  .tool-call > summary { min-height: 44px; padding: 10px; }
-  .tool-list { padding: 0 10px 10px; }
-  .detail { padding: 0 10px 10px; }
+  .tool-call > summary {
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  .tool-list {
+    padding: 0 10px 10px;
+  }
+
+  .detail {
+    padding: 0 10px 10px;
+  }
 }
 </style>

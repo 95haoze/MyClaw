@@ -21,6 +21,8 @@ export interface StreamChatOptions {
   sessionId: string
   messages: Message[]
   attachmentIds?: string[]
+  workingDirectory?: string
+  permissionMode?: string
   signal: AbortSignal
   /** 每收到一段增量文本就回调一次，用于打字机效果。 */
   onDelta: (content: string) => void
@@ -34,12 +36,12 @@ export interface StreamChatOptions {
  * 中途报错或提前断流都会抛出 ChatApiError，被 abort 则抛出 AbortError。
  */
 export async function streamChat(options: StreamChatOptions): Promise<ChatResponse> {
-  const { endpoint, requestId, sessionId, messages, attachmentIds, signal, onDelta, onStart, onStatus, onTool } = options
+  const { endpoint, requestId, sessionId, messages, attachmentIds, workingDirectory, permissionMode, signal, onDelta, onStart, onStatus, onTool } = options
 
   const response = await apiFetch(`${endpoint.replace(/\/$/, '')}/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-    body: JSON.stringify({ requestId, sessionId, messages, attachmentIds }),
+    body: JSON.stringify({ requestId, sessionId, messages, attachmentIds, workingDirectory, permissionMode }),
     signal,
   })
 

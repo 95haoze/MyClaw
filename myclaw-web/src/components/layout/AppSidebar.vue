@@ -1,7 +1,21 @@
 <script setup lang="ts">
-import { Eraser, LogOut, Moon, PanelLeftClose, PawPrint, Plus, Search, Settings2, Sun, UserRound, X } from 'lucide-vue-next'
-import type { Session } from '../../types'
-import type { CurrentUser } from '../../api'
+import {
+  Eraser,
+  Folder,
+  FolderPlus,
+  LogOut,
+  Moon,
+  PanelLeftClose,
+  PawPrint,
+  Plus,
+  Search,
+  Settings2,
+  Sun,
+  UserRound,
+  X
+} from 'lucide-vue-next'
+import type {Session} from '../../types'
+import type {CurrentUser} from '../../api'
 import SessionItem from '../sidebar/SessionItem.vue'
 
 defineProps<{
@@ -16,10 +30,12 @@ defineProps<{
   currentUser: CurrentUser
   isDark: boolean
   hasMessages: boolean
+  workspaces: string[]
+  workingDirectory: string
 }>()
 
 /** 搜索词由父级持有，这里双向绑定。 */
-const query = defineModel<string>('query', { required: true })
+const query = defineModel<string>('query', {required: true})
 
 const emit = defineEmits<{
   newChat: []
@@ -32,31 +48,56 @@ const emit = defineEmits<{
   clear: []
   toggleTheme: []
   logout: []
+  addWorkspace: []
+  selectWorkspace: [path: string]
+  removeWorkspace: [path: string]
 }>()
 </script>
 
 <template>
   <aside class="sidebar" :class="{ open, collapsed }">
     <div class="brand">
-      <span class="brand-mark"><PawPrint :size="15" /></span>
+      <span class="brand-mark"><PawPrint :size="15"/></span>
       <span class="brand-name">MyClaw</span>
       <span class="brand-tag">BETA</span>
-      <button class="mobile-close" type="button" aria-label="关闭侧边栏" @click="emit('close')"><X :size="18" /></button>
-      <button class="collapse-button" type="button" aria-label="收起侧边栏" title="收起侧边栏" @click="emit('toggleCollapse')"><PanelLeftClose :size="17" /></button>
+      <button class="mobile-close" type="button" aria-label="关闭侧边栏" @click="emit('close')">
+        <X :size="18"/>
+      </button>
+      <button class="collapse-button" type="button" aria-label="收起侧边栏" title="收起侧边栏"
+              @click="emit('toggleCollapse')">
+        <PanelLeftClose :size="17"/>
+      </button>
     </div>
 
     <div class="side-pad">
       <button class="new-chat" type="button" :disabled="busy" @click="emit('newChat')">
-        <Plus :size="15" />
+        <Plus :size="15"/>
         开启新对话
       </button>
 
       <label class="search">
-        <Search :size="15" />
-        <input v-model="query" type="search" placeholder="搜索历史对话" aria-label="搜索历史对话" />
+        <Search :size="15"/>
+        <input v-model="query" type="search" placeholder="搜索历史对话" aria-label="搜索历史对话"/>
       </label>
     </div>
 
+    <div class="workspace-section">
+      <div class="workspace-heading"><span>工作区</span>
+        <button type="button" title="添加工作区" @click="emit('addWorkspace')">
+          <FolderPlus :size="16"/>
+        </button>
+      </div>
+      <div v-for="path in workspaces" :key="path" class="workspace-item" :class="{ active: path === workingDirectory }">
+        <button type="button" class="workspace-select" :title="path" @click="emit('selectWorkspace', path)">
+          <Folder :size="16"/>
+          <span>{{ path === '.' ? 'MyClaw' : path.split('/').filter(Boolean).at(-1) }}</span>
+        </button>
+        <button type="button" class="workspace-remove" title="移除工作区" aria-label="移除工作区"
+                @click="emit('removeWorkspace', path)">
+          <X :size="13"/>
+        </button>
+      </div>
+    </div>
     <div class="side-scroll">
       <p v-if="loading" class="placeholder">正在加载历史记录…</p>
 
@@ -64,14 +105,14 @@ const emit = defineEmits<{
         <div v-for="group in groups" :key="group.label" class="group">
           <div class="group-label">{{ group.label }}</div>
           <SessionItem
-            v-for="session in group.items"
-            :key="session.id"
-            :session="session"
-            :active="session.id === selectedId"
-            :busy="busy"
-            @select="emit('select', $event)"
-            @rename="emit('rename', $event)"
-            @remove="emit('remove', $event)"
+              v-for="session in group.items"
+              :key="session.id"
+              :session="session"
+              :active="session.id === selectedId"
+              :busy="busy"
+              @select="emit('select', $event)"
+              @rename="emit('rename', $event)"
+              @remove="emit('remove', $event)"
           />
         </div>
 
@@ -83,16 +124,28 @@ const emit = defineEmits<{
 
     <div class="side-foot">
       <div class="foot-actions">
-        <button class="foot-link" type="button" @click="emit('openSettings')"><Settings2 :size="16" /><span>连接设置</span></button>
-        <button v-if="hasMessages" class="foot-link" type="button" :disabled="busy" @click="emit('clear')"><Eraser :size="16" /><span>清空当前对话</span></button>
-        <button class="foot-link" type="button" @click="emit('toggleTheme')"><component :is="isDark ? Sun : Moon" :size="16" /><span>{{ isDark ? '浅色主题' : '深色主题' }}</span></button>
+        <button class="foot-link" type="button" @click="emit('openSettings')">
+          <Settings2 :size="16"/>
+          <span>连接设置</span></button>
+        <button v-if="hasMessages" class="foot-link" type="button" :disabled="busy" @click="emit('clear')">
+          <Eraser :size="16"/>
+          <span>清空当前对话</span></button>
+        <button class="foot-link" type="button" @click="emit('toggleTheme')">
+          <component :is="isDark ? Sun : Moon" :size="16"/>
+          <span>{{ isDark ? '浅色主题' : '深色主题' }}</span></button>
       </div>
       <div class="account-row">
-        <span class="avatar"><UserRound :size="16" /></span>
-        <div class="workspace-meta"><div class="workspace-name">{{ currentUser.displayName }}</div><div class="workspace-sub">{{ currentUser.email }}</div></div>
-        <button class="logout-button" type="button" aria-label="退出登录" title="退出登录" @click="emit('logout')"><LogOut :size="16" /></button>
+        <span class="avatar"><UserRound :size="16"/></span>
+        <div class="workspace-meta">
+          <div class="workspace-name">{{ currentUser.displayName }}</div>
+          <div class="workspace-sub">{{ currentUser.email }}</div>
+        </div>
+        <button class="logout-button" type="button" aria-label="退出登录" title="退出登录" @click="emit('logout')">
+          <LogOut :size="16"/>
+        </button>
       </div>
-    </div>  </aside>
+    </div>
+  </aside>
 </template>
 
 <style scoped>
@@ -199,6 +252,83 @@ const emit = defineEmits<{
   color: var(--text-faint);
 }
 
+.workspace-section {
+  padding: 22px 17px 0
+}
+
+.workspace-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7px 7px;
+  font-size: 12px;
+  color: var(--text-faint)
+}
+
+.workspace-heading button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px
+}
+
+.workspace-heading button:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary)
+}
+
+.workspace-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 3px 5px 3px 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.workspace-item:hover, .workspace-item.active {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.workspace-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  padding: 5px 0;
+  text-align: left;
+}
+
+.workspace-select span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-remove {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  color: var(--text-faint);
+  opacity: .55;
+}
+
+.workspace-item:hover .workspace-remove, .workspace-item.active .workspace-remove {
+  opacity: 1;
+}
+
+.workspace-remove:hover {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
 /* ── 会话列表 ── */
 .side-scroll {
   flex: 1;
@@ -247,14 +377,71 @@ const emit = defineEmits<{
   background: var(--bg-subtle);
 }
 
-.foot-actions { display:grid; gap:2px; }
-.account-row { display:flex; align-items:center; gap:9px; margin-top:12px; padding-top:14px; border-top:1px solid var(--border); }
-.avatar { display:grid; place-items:center; width:36px; height:36px; flex:0 0 auto; border:1px solid var(--border); border-radius:10px; background:var(--bg-subtle); color:var(--text-secondary); }
-.workspace-meta { min-width:0; flex:1; }
-.workspace-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:560; line-height:1.35; color:var(--text-primary); }
-.workspace-sub { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; line-height:1.35; color:var(--text-faint); }
-.logout-button { display:grid; place-items:center; width:34px; height:34px; flex:0 0 auto; border-radius:8px; color:var(--text-muted); }
-.logout-button:hover { background:var(--danger-soft); color:var(--danger-text); }
+.foot-actions {
+  display: grid;
+  gap: 2px;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+
+.workspace-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.workspace-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 560;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+.workspace-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-faint);
+}
+
+.logout-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  color: var(--text-muted);
+}
+
+.logout-button:hover {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
 .mobile-close {
   display: none;
   place-items: center;
@@ -264,7 +451,12 @@ const emit = defineEmits<{
   border-radius: 9px;
   color: var(--text-muted);
 }
-.mobile-close:hover { background: var(--bg-subtle); color: var(--text-primary); }
+
+.mobile-close:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
 .collapse-button {
   display: grid;
   place-items: center;
@@ -275,13 +467,28 @@ const emit = defineEmits<{
   border-radius: 8px;
   color: var(--text-muted);
 }
-.collapse-button:hover { background: var(--bg-subtle); color: var(--text-primary); }
+
+.collapse-button:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
 
 @media (min-width: 821px) {
-  .sidebar { transition: width var(--transition-base), flex-basis var(--transition-base), border-color var(--transition-base); }
-  .sidebar.collapsed { width:0; flex-basis:0; border-right-color:transparent; }
-  .sidebar.collapsed > * { visibility:hidden; }
+  .sidebar {
+    transition: width var(--transition-base), flex-basis var(--transition-base), border-color var(--transition-base);
+  }
+
+  .sidebar.collapsed {
+    width: 0;
+    flex-basis: 0;
+    border-right-color: transparent;
+  }
+
+  .sidebar.collapsed > * {
+    visibility: hidden;
+  }
 }
+
 @media (max-width: 820px) {
   .sidebar {
     width: min(var(--sidebar-width), calc(100vw - 44px));
@@ -292,11 +499,30 @@ const emit = defineEmits<{
     transform: translateX(-100%);
     transition: transform var(--transition-base);
   }
-  .sidebar.open { transform: translateX(0); }
-  .collapse-button { display: none; }
-  .mobile-close { display: grid; }
-  .new-chat { min-height: 44px; }
-  .foot-link { min-height: 44px; }
-  .logout-button { width:44px; height:44px; }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .collapse-button {
+    display: none;
+  }
+
+  .mobile-close {
+    display: grid;
+  }
+
+  .new-chat {
+    min-height: 44px;
+  }
+
+  .foot-link {
+    min-height: 44px;
+  }
+
+  .logout-button {
+    width: 44px;
+    height: 44px;
+  }
 }
 </style>

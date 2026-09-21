@@ -47,10 +47,31 @@ function regenerate(index: number) {
   color: var(--text-muted)
 }
 
-.activity-title { display:flex; align-items:center; gap:8px; }
-.thinking small { padding-left:16px; color:var(--text-faint); }
-.pulse { width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity:.35; transform:scale(.8) } }
+.activity-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thinking small {
+  padding-left: 16px;
+  color: var(--text-faint);
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .35;
+    transform: scale(.8)
+  }
+}
 
 .dots {
   display: inline-flex;
@@ -91,8 +112,8 @@ function regenerate(index: number) {
   }
 
   .thinking {
-  align-self: stretch;
-  border-left: 2px solid var(--border-strong);
+    align-self: stretch;
+    border-left: 2px solid var(--border-strong);
     padding-left: 0
   }
 }</style>

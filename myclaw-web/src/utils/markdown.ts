@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify'
-import { marked } from 'marked'
+import {marked} from 'marked'
 import hljs from 'highlight.js/lib/core'
 import bash from 'highlight.js/lib/languages/bash'
 import css from 'highlight.js/lib/languages/css'
@@ -34,16 +34,16 @@ hljs.registerLanguage('yaml', yaml)
 hljs.registerLanguage('yml', yaml)
 
 const renderer = new marked.Renderer()
-renderer.code = ({ text, lang }) => {
-  const requested = (lang || '').trim().split(/\s+/)[0]!.toLowerCase()
-  const known = requested && hljs.getLanguage(requested)
-  const highlighted = known ? hljs.highlight(text, { language: requested }).value : hljs.highlightAuto(text).value
-  const label = requested || 'text'
-  return `<div class="code-block"><div class="code-toolbar"><span>${label}</span><button type="button" data-copy-code aria-label="复制代码">复制</button></div><pre><code class="hljs language-${label}">${highlighted}</code></pre></div>`
+renderer.code = ({text, lang}) => {
+    const requested = (lang || '').trim().split(/\s+/)[0]!.toLowerCase()
+    const known = requested && hljs.getLanguage(requested)
+    const highlighted = known ? hljs.highlight(text, {language: requested}).value : hljs.highlightAuto(text).value
+    const label = requested || 'text'
+    return `<div class="code-block"><div class="code-toolbar"><span>${label}</span><button type="button" data-copy-code aria-label="复制代码">复制</button></div><pre><code class="hljs language-${label}">${highlighted}</code></pre></div>`
 }
-marked.setOptions({ gfm: true, breaks: true, renderer })
+marked.setOptions({gfm: true, breaks: true, renderer})
 
 export function renderMarkdown(source: string): string {
-  const html = marked.parse(source, { async: false })
-  return DOMPurify.sanitize(html, { ADD_ATTR: ['data-copy-code'] })
+    const html = marked.parse(source, {async: false})
+    return DOMPurify.sanitize(html, {ADD_ATTR: ['data-copy-code']})
 }

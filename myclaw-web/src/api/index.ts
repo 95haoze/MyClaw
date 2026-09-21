@@ -31,3 +31,5 @@ export * from './auth'
 export * from './attachments'
 
 export * from './feedback'
+
+export * from './workspaces'
