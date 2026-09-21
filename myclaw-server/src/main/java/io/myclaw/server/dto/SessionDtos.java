@@ -18,6 +18,7 @@ public final class SessionDtos {
 
     public record StoredMessage(Long id, String role, String content, String status, Instant createdAt,
                                 Integer iterations, Integer toolCalls, Integer totalTokens, Long durationMillis,
+                                List<ChatResponse.ToolExecution> tools,
                                 List<AttachmentService.View> attachments, String feedback) {
     }
 

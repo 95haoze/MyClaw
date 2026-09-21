@@ -211,32 +211,34 @@
 }
 
 .markdown-body .hljs-comment, .markdown-body .hljs-quote {
-    color: #8a8f98;
+    color: #59636e;
     font-style: italic;
 }
 
 .markdown-body .hljs-keyword, .markdown-body .hljs-selector-tag, .markdown-body .hljs-built_in {
-    color: #9b4f76;
+    color: #a626a4;
+    font-weight: 550;
 }
 
 .markdown-body .hljs-string, .markdown-body .hljs-attr, .markdown-body .hljs-template-variable {
-    color: #557a46;
+    color: #207227;
 }
 
 .markdown-body .hljs-number, .markdown-body .hljs-literal, .markdown-body .hljs-variable {
-    color: #9a641f;
+    color: #9a6700;
 }
 
 .markdown-body .hljs-title, .markdown-body .hljs-title.function_, .markdown-body .hljs-section {
-    color: #3f6f91;
+    color: #0969da;
+    font-weight: 550;
 }
 
 .markdown-body .hljs-type, .markdown-body .hljs-class .hljs-title {
-    color: #7b5c9e;
+    color: #6f42c1;
 }
 
 .markdown-body .hljs-meta, .markdown-body .hljs-symbol {
-    color: #8b5e3c;
+    color: #cf222e;
 }
 
 :root[data-theme='dark'] .markdown-body .hljs-keyword, :root[data-theme='dark'] .markdown-body .hljs-selector-tag, :root[data-theme='dark'] .markdown-body .hljs-built_in {

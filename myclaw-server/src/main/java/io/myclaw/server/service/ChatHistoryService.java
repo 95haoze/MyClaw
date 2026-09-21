@@ -5,8 +5,10 @@ import io.myclaw.server.dto.ChatResponse;
 import io.myclaw.server.dto.SessionDtos;
 import io.myclaw.server.persistence.entity.ChatMessageEntity;
 import io.myclaw.server.persistence.entity.ChatSessionEntity;
+import io.myclaw.server.persistence.entity.ChatToolExecutionEntity;
 import io.myclaw.server.persistence.repository.ChatMessageRepository;
 import io.myclaw.server.persistence.repository.ChatSessionRepository;
+import io.myclaw.server.persistence.repository.ChatToolExecutionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,17 +32,20 @@ public class ChatHistoryService {
     private final ChatMessageRepository messageRepository;
     private final AttachmentService attachmentService;
     private final MessageFeedbackService feedbackService;
+    private final ChatToolExecutionRepository toolExecutionRepository;
 
     public ChatHistoryService(
             ChatSessionRepository sessionRepository,
             ChatMessageRepository messageRepository,
             AttachmentService attachmentService,
-            MessageFeedbackService feedbackService
+            MessageFeedbackService feedbackService,
+            ChatToolExecutionRepository toolExecutionRepository
     ) {
         this.sessionRepository = sessionRepository;
         this.messageRepository = messageRepository;
         this.attachmentService = attachmentService;
         this.feedbackService = feedbackService;
+        this.toolExecutionRepository = toolExecutionRepository;
     }
 
     @Transactional
@@ -74,6 +79,15 @@ public class ChatHistoryService {
                 response.durationMillis()
         );
         assistant = messageRepository.save(assistant);
+        List<ChatToolExecutionEntity> executions = new ArrayList<>();
+        for (int index = 0; index < response.tools().size(); index++) {
+            ChatResponse.ToolExecution tool = response.tools().get(index);
+            executions.add(new ChatToolExecutionEntity(
+                    assistant.getId(), tool.id(), tool.name(), tool.arguments(), tool.status(),
+                    tool.durationMillis(), tool.result(), index
+            ));
+        }
+        toolExecutionRepository.saveAll(executions);
         sessionRepository.findByIdAndOwnerEmail(sessionId, owner()).ifPresent(session -> {
             session.touch();
             sessionRepository.save(session);
@@ -186,6 +200,10 @@ public class ChatHistoryService {
     private SessionDtos.StoredMessage toStoredMessage(ChatMessageEntity message) {
         return new SessionDtos.StoredMessage(message.getId(), message.getRole(), message.getContent(), message.getStatus(),
                 message.getCreatedAt(), message.getIterations(), message.getToolCalls(), message.getTotalTokens(), message.getDurationMillis(),
+                toolExecutionRepository.findByMessageId(message.getId()).stream().map(tool -> new ChatResponse.ToolExecution(
+                        tool.getExecutionId(), tool.getToolName(), tool.getArguments(), tool.getStatus(),
+                        tool.getDurationMillis(), tool.getResult()
+                )).toList(),
                 attachmentService.viewsForMessage(message.getId()), feedbackService.value(message.getId()));
     }
 

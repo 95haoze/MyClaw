@@ -77,4 +77,27 @@ class ChatHistoryServiceTest {
         chatHistoryService.deleteSession(sessionId);
         assertTrue(chatHistoryService.loadRecentMessages(sessionId).isEmpty());
     }
-}
+
+    @Test
+    void toolExecutionsArePersistedAndReturnedWithSessionHistory() {
+        String sessionId = "tool-history-session";
+        chatHistoryService.beginRequest("tool-history-request", sessionId, "search", List.of());
+        chatHistoryService.completeRequest(
+                "tool-history-request",
+                sessionId,
+                new ChatResponse("result", 2, 1, 24, 150,
+                        List.of(new ChatResponse.ToolExecution(
+                                "call-1", "web_search", "{\"query\":\"Spring Boot\"}",
+                                "completed", 42, "1. Spring Boot"
+                        )), null)
+        );
+
+        var assistant = chatHistoryService.getSession(sessionId).messages().get(1);
+        assertEquals(1, assistant.tools().size());
+        var tool = assistant.tools().getFirst();
+        assertEquals("call-1", tool.id());
+        assertEquals("web_search", tool.name());
+        assertEquals("completed", tool.status());
+        assertEquals(42, tool.durationMillis());
+        assertEquals("1. Spring Boot", tool.result());
+    }}

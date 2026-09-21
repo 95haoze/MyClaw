@@ -11,7 +11,7 @@
     color-scheme: light;
 
     /* 中性色阶 */
-    --bg-app: #f8f8f7;
+    --bg-app: #ffffff;
     --bg-sidebar: #ffffff;
     --bg-surface: #ffffff;
     --bg-subtle: #f3f3f1;
@@ -55,10 +55,10 @@
     --warning-text: #8a6522;
 
     /* 代码 */
-    --code-bg: #f4f4f6;
-    --code-text: #52525b;
-    --code-inline-bg: #f4f4f6;
-    --code-inline-text: #52525b;
+    --code-bg: #f6f8fa;
+    --code-text: #24292f;
+    --code-inline-bg: #eef1f4;
+    --code-inline-text: #343941;
 
     /* 圆角 */
     --radius-xs: 5px;

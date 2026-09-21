@@ -36,15 +36,22 @@ myclaw:
   #   MYCLAW_API_KEY -> OPENAI_API_KEY -> DASHSCOPE_API_KEY -> aliQwen-api
   # 如果用的是通义千问，base-url 与 model 也会自动指向 DashScope 兼容端点。
   # 也可以直接写死（不推荐提交到代码仓库）：
-  api-key: "${MYCLAW_API_KEY:sk-4e4a1fe68fa34892bfa0405ded3246c8}"
-  base-url: https://api.deepseek.com
-  model: deepseek-v4-pro
+  # api-key: "${MYCLAW_API_KEY:sk-4e4a1fe68fa34892bfa0405ded3246c8}"
+  api-key: "${MYCLAW_API_KEY:sk-1234567891011}"
+  #base-url: https://api.deepseek.com
+  base-url: https://budgetai.cc/v1
+  model: gpt-5.6-sol
   temperature: 0.3
-  max-iterations: 8
-  max-retries: 2
+  max-iterations: 30
+  max-retries: 5
 
   # 工具的工作目录：文件类工具只能访问该目录及其子目录
   working-directory: .
+  workspace:
+    # 使用分号分隔多个允许目录，例如 F:/Et/projects;D:/workspace
+    allowed-roots: ${MYCLAW_ALLOWED_WORKSPACE_ROOTS:.}
+    # 本地模式按需开启；云端必须保持 false。
+    allow-any-directory: ${MYCLAW_ALLOW_ANY_DIRECTORY:false}
 
   tools:
     calculator: true
@@ -79,6 +86,19 @@ myclaw:
     #     base-url: "https://api.search.brave.com/"
     #     headers:
     #       X-Subscription-Token: "${BRAVE_SEARCH_API_KEY}"
+    # Tavily web search. Keep the key on the backend; set TAVILY_API_KEY before startup.
+    http-credentials:
+      tavily:
+        base-url: "https://api.tavily.com/"
+        headers:
+          Authorization: "Bearer ${TAVILY_API_KEY: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}"
+          Content-Type: "application/json"
+    search-providers:
+      tavily:
+        url-template: "https://api.tavily.com/search"
+        credential-profile: tavily
+        response-format: tavily
+        method: POST
     # search-providers:
     #   brave:
     #     url-template: "https://api.search.brave.com/res/v1/web/search?q={query}&page={page}"
