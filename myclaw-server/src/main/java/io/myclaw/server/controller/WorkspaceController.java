@@ -16,8 +16,15 @@ public class WorkspaceController {
     public ApiResponse<WorkspacePathService.DirectoryView> browse(@RequestParam(defaultValue = ".") String path) {
         return ApiResponse.ok(service.browse(path));
     }
+    @PostMapping("/open")
+    public ApiResponse<Void> open(@RequestBody OpenWorkspaceRequest request) {
+        service.openInApplication(request.path(), request.application());
+        return ApiResponse.ok(null);
+    }
     @PostMapping("/select-directory")
     public ApiResponse<String> selectDirectory() {
         return ApiResponse.ok(service.selectDirectory());
     }
+
+    public record OpenWorkspaceRequest(String path, String application) {}
 }

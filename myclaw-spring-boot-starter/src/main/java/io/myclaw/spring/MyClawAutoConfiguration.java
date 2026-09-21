@@ -192,12 +192,14 @@ public class MyClawAutoConfiguration {
         }
         if (!tools.getLspServers().isEmpty()) {
             registry.register(BuiltinTools.lspQuery(tools.getLspServers()));
-        }        if (tools.isCodeAnalysis()) {
+        }
+        if (tools.isCodeAnalysis()) {
             registry.register(BuiltinTools.findSymbol());
             registry.register(BuiltinTools.findReferences());
             registry.register(BuiltinTools.codeOutline());
             registry.register(BuiltinTools.codeDiagnostics());
-        }        if (tools.isGit()) {
+        }
+        if (tools.isGit()) {
             registry.register(BuiltinTools.gitStatus());
             registry.register(BuiltinTools.gitDiff());
             registry.register(BuiltinTools.gitLog());
@@ -239,12 +241,18 @@ public class MyClawAutoConfiguration {
                     log.warn("MyClaw db_execute is enabled; the Agent can modify configured DataSource contents");
                 }
             }
-        }        var credentials = networkCredentials(tools);
+        }
+        var credentials = networkCredentials(tools);
         registry.register(BuiltinTools.downloadFile(credentials));
         registry.register(BuiltinTools.batchFetch(credentials));
-        if (!credentials.isEmpty()) registry.register(BuiltinTools.apiRequest(credentials));
+
+        if (!credentials.isEmpty())
+            registry.register(BuiltinTools.apiRequest(credentials));
+
         var searchProviders = searchProviders(tools);
-        if (!searchProviders.isEmpty()) registry.register(BuiltinTools.webSearch(searchProviders, credentials));
+        if (!searchProviders.isEmpty())
+            registry.register(BuiltinTools.webSearch(searchProviders, credentials));
+
         if (tools.isHttpFetch()) {
             registry.register(BuiltinTools.httpFetch());
         }
@@ -264,8 +272,10 @@ public class MyClawAutoConfiguration {
      */
     private static java.util.Map<String, NetworkTools.CredentialProfile> networkCredentials(MyClawProperties.Tools tools) {
         java.util.Map<String, NetworkTools.CredentialProfile> result = new java.util.LinkedHashMap<>();
+
         tools.getHttpCredentials().forEach((name, value) -> result.put(name,
                 new NetworkTools.CredentialProfile(value.getBaseUrl(), value.getHeaders(), value.isAllowPrivateNetwork())));
+
         return result;
     }
 

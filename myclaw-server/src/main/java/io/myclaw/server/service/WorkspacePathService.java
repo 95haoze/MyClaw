@@ -89,7 +89,8 @@ public class WorkspacePathService {
             if (output.isBlank()) return null;
             try {
                 Path selected = Path.of(output).toRealPath();
-                if (!Files.isDirectory(selected)) throw new IllegalStateException("系统目录选择器未返回文件夹: " + output);
+                if (!Files.isDirectory(selected))
+                    throw new IllegalStateException("系统目录选择器未返回文件夹: " + output);
                 return selected;
             } catch (RuntimeException invalidOutput) {
                 throw new IllegalStateException("系统目录选择器返回了无效路径: " + output, invalidOutput);
@@ -103,7 +104,8 @@ public class WorkspacePathService {
     }
 
     private Path selectSwingDirectory() {
-        if (GraphicsEnvironment.isHeadless()) throw new IllegalStateException("当前后端运行在无桌面环境，无法打开系统目录选择器");
+        if (GraphicsEnvironment.isHeadless())
+            throw new IllegalStateException("当前后端运行在无桌面环境，无法打开系统目录选择器");
         final Path[] selected = new Path[1];
         final RuntimeException[] failure = new RuntimeException[1];
         try {
@@ -115,11 +117,16 @@ public class WorkspacePathService {
                 chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 chooser.setAcceptAllFileFilterUsed(false);
                 if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                    try { selected[0] = chooser.getSelectedFile().toPath().toRealPath(); }
-                    catch (IOException e) { failure[0] = new IllegalArgumentException("选择的目录不可访问", e); }
+                    try {
+                        selected[0] = chooser.getSelectedFile().toPath().toRealPath();
+                    } catch (IOException e) {
+                        failure[0] = new IllegalArgumentException("选择的目录不可访问", e);
+                    }
                 }
             });
-        } catch (Exception e) { throw new IllegalStateException("无法打开系统目录选择器", e); }
+        } catch (Exception e) {
+            throw new IllegalStateException("无法打开系统目录选择器", e);
+        }
         if (failure[0] != null) throw failure[0];
         return selected[0];
     }
@@ -127,6 +134,7 @@ public class WorkspacePathService {
     private boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("windows");
     }
+
     private boolean isAllowed(Path path) {
         if (allowAnyDirectory || roots.stream().anyMatch(path::startsWith)) return true;
         return userRoots.getOrDefault(owner(), Set.of()).stream().anyMatch(path::startsWith);
@@ -137,6 +145,49 @@ public class WorkspacePathService {
         return authentication == null ? "anonymous" : authentication.getName();
     }
 
+    public void openInApplication(String requested, String application) {
+        Path directory = resolve(requested);
+        String app = application == null ? "explorer" : application.toLowerCase(Locale.ROOT);
+        try {
+            switch (app) {
+                case "explorer" -> new ProcessBuilder("explorer.exe", directory.toString()).start();
+                case "cursor" -> launchExternal(directory, "cursor", "Cursor.exe");
+                case "idea" -> launchExternal(directory, "idea64", "idea64.exe");
+                case "pycharm" -> launchExternal(directory, "pycharm64", "pycharm64.exe");
+                default -> throw new IllegalArgumentException("不支持的打开方式: " + application);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("无法使用 " + application + " 打开工作区，请确认应用已安装并加入 PATH", e);
+        }
+    }
+
+    private void launchExternal(Path directory, String command, String executableName) throws IOException {
+        Process lookup = new ProcessBuilder("where.exe", command).redirectErrorStream(true).start();
+        String located;
+        try {
+            located = new String(lookup.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).lines().findFirst().orElse("").strip();
+            lookup.waitFor();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("查找应用时被中断", e);
+        }
+        if (!located.isBlank()) {
+            if (located.toLowerCase(Locale.ROOT).endsWith(".cmd"))
+                new ProcessBuilder("cmd.exe", "/c", located, directory.toString()).start();
+            else new ProcessBuilder(located, directory.toString()).start();
+            return;
+        }
+        String localAppData = System.getenv("LOCALAPPDATA");
+        if (localAppData != null) {
+            Path cursor = Path.of(localAppData, "Programs", "cursor", executableName);
+            if (Files.isRegularFile(cursor)) {
+                new ProcessBuilder(cursor.toString(), directory.toString()).start();
+                return;
+            }
+        }
+        throw new IOException("未找到应用程序: " + executableName);
+    }
+
     public Path root() {
         return defaultRoot;
     }
@@ -145,7 +196,8 @@ public class WorkspacePathService {
         if ("__roots__".equals(requested)) return rootsView();
         Path current = resolve(requested);
         try (var children = Files.list(current)) {
-            List<DirectoryEntry> directories = children.filter(Files::isDirectory).map(path -> {
+            List<Path> entries = children.limit(1000).toList();
+            List<DirectoryEntry> directories = entries.stream().filter(Files::isDirectory).map(path -> {
                 try {
                     Path real = path.toRealPath();
                     return allowAnyDirectory || roots.stream().anyMatch(real::startsWith) ? new DirectoryEntry(path.getFileName().toString(), display(real)) : null;
@@ -153,9 +205,16 @@ public class WorkspacePathService {
                     return null;
                 }
             }).filter(Objects::nonNull).sorted(Comparator.comparing(DirectoryEntry::name, String.CASE_INSENSITIVE_ORDER)).toList();
+            List<FileEntry> files = entries.stream().filter(Files::isRegularFile).map(path -> {
+                try {
+                    return new FileEntry(path.getFileName().toString(), display(path.toRealPath()), Files.size(path));
+                } catch (IOException ignored) {
+                    return null;
+                }
+            }).filter(Objects::nonNull).sorted(Comparator.comparing(FileEntry::name, String.CASE_INSENSITIVE_ORDER)).toList();
             Path owningRoot = roots.stream().filter(current::startsWith).max(Comparator.comparingInt(Path::getNameCount)).orElse(defaultRoot);
             String parent = current.getParent() == null || (!allowAnyDirectory && current.equals(owningRoot)) ? "__roots__" : display(current.getParent());
-            return new DirectoryView(display(current), parent, directories, allowAnyDirectory || roots.size() > 1);
+            return new DirectoryView(display(current), parent, directories, files, allowAnyDirectory || roots.size() > 1);
         } catch (IOException e) {
             throw new IllegalArgumentException("无法读取工作目录: " + requested, e);
         }
@@ -168,13 +227,16 @@ public class WorkspacePathService {
     private DirectoryView rootsView() {
         List<Path> available = allowAnyDirectory ? new ArrayList<>() : roots;
         if (allowAnyDirectory) Path.of(".").getFileSystem().getRootDirectories().forEach(available::add);
-        return new DirectoryView("__roots__", null, available.stream().filter(Files::isReadable).map(p -> new DirectoryEntry(p.getFileName() == null ? p.toString() : p.getFileName().toString(), display(p))).toList(), allowAnyDirectory || roots.size() > 1);
+        return new DirectoryView("__roots__", null, available.stream().filter(Files::isReadable).map(p -> new DirectoryEntry(p.getFileName() == null ? p.toString() : p.getFileName().toString(), display(p))).toList(), List.of(), allowAnyDirectory || roots.size() > 1);
     }
 
     public record DirectoryEntry(String name, String path) {
     }
 
+    public record FileEntry(String name, String path, long sizeBytes) {
+    }
+
     public record DirectoryView(String current, String parent, List<DirectoryEntry> directories,
-                                boolean canBrowseRoots) {
+                                List<FileEntry> files, boolean canBrowseRoots) {
     }
 }
